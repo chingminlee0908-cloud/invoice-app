@@ -9,11 +9,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        /* --- 基礎設定 --- */
+        /* --- 1. 核心變數與背景 (奶油玻璃風) --- */
         :root {
             --primary-accent: #EBCB8B;   /* 奶油黃 */
             --secondary-accent: #D08770; /* 柔和橘 */
-            --text-dark: #4C566A;        /* 文字色 */
+            --text-dark: #4C566A;        /* 深灰藍文字 */
             --glass-bg: rgba(255, 255, 255, 0.45); 
             --glass-border: rgba(255, 255, 255, 0.6);
             --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
@@ -23,94 +23,141 @@
             font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
             color: var(--text-dark);
             margin: 0;
-            padding: 10px;
+            padding: 15px;
+            min-height: 100vh;
+            /* 溫暖漸層背景 */
             background: linear-gradient(135deg, #FDFBF7 0%, #F8E6C8 50%, #F2D7B6 100%);
             background-attachment: fixed;
-            touch-action: manipulation; /* 優化手機觸控 */
+            touch-action: manipulation; /* 優化手機觸控體驗 */
         }
 
         .container { max-width: 1000px; margin: 0 auto; }
 
-        /* --- 卡片樣式 (玻璃質感) --- */
+        /* --- 2. UI 卡片設計 --- */
         .card {
             background: var(--glass-bg);
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border-radius: 16px; border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow); padding: 15px; margin-bottom: 15px;
+            border-radius: 20px; border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow); padding: 20px; margin-bottom: 20px;
         }
 
-        h1 { font-size: 1.4rem; text-align: center; margin: 10px 0 15px; color: #5E81AC; text-shadow: 0 1px 2px rgba(255,255,255,0.8); }
-        h3 { font-size: 1.1rem; border-left: 4px solid var(--secondary-accent); padding-left: 8px; margin: 0 0 10px; color: #434C5E; }
+        h1 { font-size: 1.5rem; text-align: center; margin: 10px 0 20px 0; color: #5E81AC; text-shadow: 0 2px 4px rgba(255,255,255,0.5); }
+        h3 { font-size: 1.2rem; border-left: 5px solid var(--secondary-accent); padding-left: 10px; margin: 0 0 15px 0; color: #434C5E; }
 
-        /* --- 頂部控制 --- */
-        .header-controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 15px; }
-        .tabs { display: flex; background: rgba(255,255,255,0.4); padding: 4px; border-radius: 30px; width: 100%; border: 1px solid rgba(255,255,255,0.5); }
-        .tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; border-radius: 25px; font-weight: bold; color: #666; transition: 0.3s; font-size: 1rem; }
-        .tab-btn.active { background: #FFF; color: var(--secondary-accent); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        /* --- 3. 操作元件 --- */
+        .header-controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .tabs { 
+            display: flex; background: rgba(255,255,255,0.3); padding: 5px; border-radius: 30px; 
+            width: 100%; max-width: 300px; border: 1px solid rgba(255,255,255,0.4);
+        }
+        .tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; border-radius: 25px; font-weight: bold; color: #666; transition: 0.3s; }
+        .tab-btn.active { background: #FFF; color: var(--secondary-accent); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
         @media (min-width: 768px) {
             .header-controls { flex-direction: row; justify-content: space-between; }
             h1 { text-align: left; margin: 0; }
             .tabs { width: auto; min-width: 240px; }
-            .card { padding: 24px; margin-bottom: 24px; }
         }
 
-        /* --- 表單格線 --- */
-        .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        /* --- 4. 表單與輸入 --- */
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; gap: 20px; } }
         
-        .form-group { margin-bottom: 8px; }
-        label { display: block; margin-bottom: 4px; font-size: 0.9rem; font-weight: bold; color: #555; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #555; font-weight: bold; }
+        
         input, textarea, select {
-            width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.6); border-radius: 10px;
-            font-size: 16px; /* 防止 iOS 縮放 */
-            background: rgba(255, 255, 255, 0.7); box-sizing: border-box; appearance: none;
+            width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.5); border-radius: 12px;
+            font-size: 16px; background: rgba(255, 255, 255, 0.6); box-sizing: border-box; appearance: none;
         }
-        input:focus { outline: none; background: #FFF; border-color: var(--primary-accent); }
+        input:focus, textarea:focus { outline: none; background: #FFF; border-color: var(--primary-accent); box-shadow: 0 0 0 3px rgba(235, 203, 139, 0.3); }
 
-        /* --- 輸入表格 (手機橫向滑動) --- */
-        .table-wrapper { width: 100%; overflow-x: auto; margin-bottom: 10px; border-radius: 12px; background: rgba(255,255,255,0.4); }
-        .table-editor { width: 100%; border-collapse: collapse; min-width: 650px; } /* 寬度足夠顯示完整標題 */
-        .table-editor th { text-align: left; padding: 10px; color: #555; font-size: 0.9rem; background: rgba(255,255,255,0.6); white-space: nowrap; }
+        /* --- 5. 表格區塊 (手機橫向滑動) --- */
+        .table-wrapper {
+            width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+            margin-bottom: 10px; border-radius: 12px; background: rgba(255,255,255,0.3);
+        }
+        .table-editor { width: 100%; border-collapse: collapse; min-width: 650px; }
+        .table-editor th { text-align: left; padding: 12px; color: #666; font-size: 0.9rem; background: rgba(255,255,255,0.5); white-space: nowrap; }
         .table-editor td { padding: 8px; vertical-align: top; }
-        .btn-icon { background: #FFF; border: 1px solid #FFCDCD; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: #D32F2F; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .btn-icon { 
+            background: #FFF; border: 1px solid #FFCDCD; border-radius: 50%; width: 30px; height: 30px;
+            cursor: pointer; color: #D32F2F; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
-        /* --- 按鈕 --- */
-        .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        /* --- 6. 按鈕樣式 --- */
+        .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
         @media (min-width: 768px) { .btn-group { flex-direction: row; } }
-        .btn { padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .btn {
+            padding: 14px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+            transition: transform 0.1s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:active { transform: scale(0.98); }
         @media (min-width: 768px) { .btn { width: auto; } }
+
         .btn-primary { background: linear-gradient(135deg, #D08770, #C27460); color: white; }
         .btn-success { background: linear-gradient(135deg, #2E7D32, #1B5E20); color: white; }
         .btn-secondary { background: linear-gradient(135deg, #EBCB8B, #D4B475); color: #5D4037; }
-        .btn-outline { background: rgba(255,255,255,0.9); border: 1px solid #CCC; color: #666; }
-        .btn-sm { padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; border: 1px solid #CCC; background: rgba(255,255,255,0.8); cursor: pointer; }
+        .btn-outline { background: rgba(255,255,255,0.8); border: 1px solid #CCC; color: #666; }
+        .btn-sm { padding: 5px 10px; font-size: 0.85rem; border-radius: 8px; border: 1px solid #CCC; background: rgba(255,255,255,0.6); cursor: pointer; color: #666; }
 
-        /* --- 預覽區控制 --- */
-        .preview-controls { background: rgba(255,255,255,0.5); padding: 8px 15px; border-radius: 20px; margin: 10px 0; font-size: 0.9rem; color: #666; display:flex; justify-content: space-between; align-items: center;}
-
-        /* --- A4 預覽 (螢幕顯示模式) --- */
-        .a4-preview-container {
-            background: rgba(0,0,0,0.05); padding: 15px; display: block; text-align: center;
-            overflow-x: auto; border-radius: 12px; margin-top: 5px;
+        /* --- 7. A4 預覽區 (螢幕顯示用) --- */
+        .preview-controls {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.5); padding: 10px; border-radius: 12px; margin-top: 20px;
+            backdrop-filter: blur(5px);
         }
+        
+        .a4-preview-container {
+            background: rgba(0,0,0,0.05); padding: 20px; 
+            display: block; text-align: center; /* 讓內容居中 */
+            overflow-x: auto; border-radius: 12px; margin-top: 10px;
+        }
+        
         .a4-page {
             background: white; 
-            width: 794px; /* A4 寬度 */
-            min-height: 1123px; /* A4 高度 */
-            height: auto; /* 允許自動長高 */
+            width: 794px; /* A4 96dpi 寬度 */
+            min-height: 1123px; 
+            height: auto; /* 自動長高，避免螢幕預覽被切 */
             padding: 40px 60px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
-            display: inline-block; text-align: left; box-sizing: border-box;
-            transform-origin: top center; transition: transform 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            display: inline-block; text-align: left;
+            box-sizing: border-box;
+            font-family: "Microsoft JhengHei", serif;
+            transform-origin: top center; transition: transform 0.3s ease;
         }
 
-        /* --- 列印專用樣式 (重要修復) --- */
+        /* --- 8. A4 內部排版樣式 --- */
+        .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .doc-title { font-size: 24pt; font-weight: bold; color: #000; text-shadow: none; }
+        .doc-meta { text-align: right; font-size: 10pt; line-height: 1.4; }
+        
+        .parties-grid { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 10pt; }
+        .party-box { width: 48%; }
+        .info-row { display: flex; margin-bottom: 4px; }
+        .info-label { width: 70px; color: #666; flex-shrink: 0; }
+        
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 20px; }
+        .doc-table th { border-bottom: 1px solid #000; padding: 6px; text-align: left; background: #FAFAFA; font-weight: bold; }
+        .doc-table td { border-bottom: 1px solid #EEE; padding: 8px 6px; vertical-align: top; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        
+        .doc-footer { display: flex; justify-content: space-between; margin-top: 10px; }
+        .notes-area { width: 60%; font-size: 9pt; color: #444; white-space: pre-wrap; border: 1px solid #EEE; padding: 8px; border-radius: 4px; }
+        .totals-area { width: 35%; font-size: 10pt; }
+        .total-row { display: flex; justify-content: space-between; padding: 4px 0; }
+        .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 12pt; margin-top: 4px; padding-top: 8px; }
+
+        /* --- 9. 列印專用設定 (@media print) --- */
+        /* 這是解決「畫面切割」與「斷頁亂掉」的核心 */
         @media print {
-            @page { 
-                size: A4; 
-                margin: 15mm; /* 關鍵：設定邊界，讓瀏覽器自動處理換頁，不再切斷內容 */
-            }
+            /* 設定 A4 紙張與邊界，讓瀏覽器自動處理換頁 */
+            @page { size: A4; margin: 15mm; } 
+            
             body { background: white; margin: 0; padding: 0; }
             .no-print, .header-controls, .card, .btn-group, .preview-controls { display: none !important; }
             
@@ -120,44 +167,20 @@
             }
             
             .a4-page { 
-                width: 100% !important; 
-                margin: 0 !important; 
-                padding: 0 !important; /* 列印時去除內距，由 @page margin 控制 */
-                box-shadow: none !important; 
-                transform: none !important; /* 禁止縮放 */
-                display: block;
+                width: 100% !important; margin: 0 !important; padding: 0 !important; 
+                box-shadow: none !important; transform: none !important; /* 禁止列印時縮放 */
+                border: none;
             }
 
-            /* 表格標題每頁重複顯示 */
+            /* 關鍵：表格標題在每一頁重複出現 */
             thead { display: table-header-group; }
             
-            /* 防止表格行被腰斬 */
-            tr { break-inside: avoid; page-break-inside: avoid; }
+            /* 關鍵：防止表格的某一行被切成兩半 */
+            tr { page-break-inside: avoid; break-inside: avoid; }
             
-            /* 防止底部區塊被切斷 */
-            .doc-footer { break-inside: avoid; page-break-inside: avoid; }
+            /* 關鍵：防止底部簽名區被切斷 */
+            .doc-footer, .signature-section { page-break-inside: avoid; break-inside: avoid; }
         }
-
-        /* A4 內部排版 */
-        .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .doc-title { font-size: 24pt; font-weight: bold; color: #000; }
-        .doc-meta { text-align: right; font-size: 10pt; line-height: 1.4; }
-        .parties-grid { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 10pt; }
-        .party-box { width: 48%; }
-        .info-row { display: flex; margin-bottom: 4px; }
-        .info-label { width: 70px; color: #666; flex-shrink: 0; }
-        
-        .doc-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 20px; }
-        .doc-table th { border-bottom: 1px solid #000; padding: 6px; text-align: left; background: #FAFAFA; font-weight: bold;}
-        .doc-table td { border-bottom: 1px solid #EEE; padding: 8px 6px; vertical-align: middle; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-
-        .doc-footer { display: flex; justify-content: space-between; }
-        .notes-area { width: 60%; font-size: 9pt; color: #444; white-space: pre-wrap; border: 1px solid #EEE; padding: 8px; border-radius: 4px;}
-        .totals-area { width: 35%; font-size: 10pt; }
-        .total-row { display: flex; justify-content: space-between; padding: 4px 0; }
-        .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 12pt; margin-top: 4px; padding-top: 8px;}
     </style>
 </head>
 <body>
@@ -270,7 +293,7 @@
 
     <div class="container no-print" style="margin-bottom: 0;">
         <div class="preview-controls">
-            <strong>👁️ 單據預覽</strong>
+            <strong>👁️ 單據預覽 (所見即所得)</strong>
             <span v-if="isMobile" style="color:#D08770; font-size:0.8rem;">(已自動縮放適應螢幕)</span>
         </div>
     </div>
@@ -335,7 +358,7 @@
                 </div>
             </div>
             
-            <div style="margin-top: 50px; display: flex; justify-content: space-between; text-align:center; page-break-inside: avoid;">
+            <div class="signature-section" style="margin-top: 50px; display: flex; justify-content: space-between; text-align:center;">
                 <div style="width: 40%; border-top: 1px solid #000; padding-top: 5px;">買方簽署</div>
                 <div style="width: 40%; border-top: 1px solid #000; padding-top: 5px;">賣方簽署</div>
             </div>
@@ -359,3 +382,102 @@
                 previewScale: 1, isMobile: false, containerHeight: 'auto'
             }
         },
+        watch: {
+            docNumber() { this.updateTitle(); },
+            'buyer.name'() { this.updateTitle(); },
+            items: { handler() { this.$nextTick(() => this.calculateScale()); }, deep: true }
+        },
+        computed: {
+            docTitle() { return this.docType === 'quote' ? '報 價 單 (Quotation)' : '出 貨 單 (Delivery Note)'; },
+            printableItems() { return this.items.filter(i => i.name || i.price || i.quantity); },
+            totals() {
+                let linesSum = this.items.reduce((acc, item) => acc + this.calculateRowTotal(item), 0);
+                let subtotal = 0, tax = 0, total = 0;
+                if (this.taxType === 'excluded') {
+                    subtotal = linesSum; tax = Math.round(subtotal * (this.taxRate / 100)); total = subtotal + tax;
+                } else {
+                    total = linesSum; subtotal = Math.round(total / (1 + (this.taxRate / 100))); tax = total - subtotal;
+                }
+                return { subtotal, tax, total };
+            }
+        },
+        methods: {
+            updateTitle() { document.title = `${this.docNumber}${this.buyer.name ? '_'+this.buyer.name : ''}`; },
+            calculateScale() {
+                const containerWidth = window.innerWidth - 30; 
+                const a4Width = 794;
+                if (containerWidth < a4Width) {
+                    this.isMobile = true;
+                    this.previewScale = containerWidth / a4Width;
+                    if (this.$refs.a4Page) {
+                         const realHeight = this.$refs.a4Page.scrollHeight;
+                         this.containerHeight = realHeight * this.previewScale + 40;
+                    }
+                } else {
+                    this.isMobile = false; this.previewScale = 1; this.containerHeight = 'auto';
+                }
+            },
+            switchDoc(type) { this.docType = type; this.generateDocNumber(); if (this.items.length === 0) this.initItems(); },
+            generateDocNumber() {
+                const prefix = this.docType === 'quote' ? 'Q' : 'D';
+                const now = new Date();
+                const str = now.toISOString().slice(0,10).replace(/-/g,'');
+                this.docNumber = `${prefix}-${str}-${Math.floor(1000+Math.random()*9000)}`;
+            },
+            initItems() { this.items = Array.from({ length: 5 }, () => ({ name: '', price: 0, quantity: 1, unit: '' })); },
+            addItem() { this.items.push({ name: '', price: 0, quantity: 1, unit: '' }); },
+            removeItem(index) { if (this.items.length > 1) this.items.splice(index, 1); else this.items[0] = { name: '', price: 0, quantity: 1, unit: '' }; },
+            calculateRowTotal(item) { return Math.round((item.price || 0) * (item.quantity || 0)); },
+            formatNumber(num) { return num ? num.toLocaleString('en-US') : '0'; },
+            
+            saveSellerToLocal() { localStorage.setItem('creamApp_sellerDefault', JSON.stringify(this.seller)); alert('已儲存！'); },
+            saveNotesToDefault() { localStorage.setItem('creamApp_notesDefault', this.notes); alert('備註已儲存為預設值！'); },
+            saveToLocal() { localStorage.setItem('creamApp_tempData', JSON.stringify({ seller: this.seller, buyer: this.buyer, items: this.items, notes: this.notes })); alert('暫存成功'); },
+            
+            loadDemoData() {
+                this.buyer = { name: '範例客戶', taxId: '12345678', contact: '陳先生', phone: '0912-345-678' };
+                this.items = [{ name: '碧螺春', price: 1200, quantity: 20, unit: '台斤' }];
+            },
+            clearData() { 
+                if(confirm('清空重置？(預設值會保留)')) { 
+                    this.initItems(); this.generateDocNumber();
+                    this.buyer = { name: '', taxId: '', contact: '', phone: '' };
+                    const defNotes = localStorage.getItem('creamApp_notesDefault');
+                    this.notes = defNotes || '';
+                } 
+            },
+            printWindow() { window.print(); },
+            exportExcel() {
+                if (typeof XLSX === 'undefined') { alert("❌ 無法載入 Excel 庫"); return; }
+                const infoData = [
+                    ["單據類型", this.docTitle], ["單號", this.docNumber], ["日期", this.date],
+                    [], ["賣方", this.seller.name], ["買方", this.buyer.name], ["電話", this.seller.phone], ["電話", this.buyer.phone],
+                    [], ["總計", this.totals.total], ["備註", this.notes]
+                ];
+                let qtyHeader = (this.docType === 'quote' && this.quoteQtyLabel === 'moq') ? 'MOQ 最低購買數量' : '數量';
+                let headers = this.docType === 'quote' ? ["品名", "批發價", qtyHeader, "單位", "小計"] : ["品名", "數量", "單價", "小計"];
+                const itemRows = this.items.filter(i => i.name).map(i => {
+                    const total = this.calculateRowTotal(i);
+                    return this.docType === 'quote' ? [i.name, i.price, i.quantity, i.unit, total] : [i.name, i.quantity, i.price, total];
+                });
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infoData), "資訊");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headers, ...itemRows]), "明細");
+                XLSX.writeFile(wb, `${this.docNumber}.xlsx`);
+            },
+            loadFromLocal() { 
+                const s = localStorage.getItem('creamApp_sellerDefault'); 
+                if (s) this.seller = JSON.parse(s);
+                const n = localStorage.getItem('creamApp_notesDefault');
+                if (n) this.notes = n;
+            }
+        },
+        mounted() { 
+            this.generateDocNumber(); this.initItems(); this.loadFromLocal(); this.updateTitle();
+            this.calculateScale(); window.addEventListener('resize', this.calculateScale);
+        },
+        unmounted() { window.removeEventListener('resize', this.calculateScale); }
+    }).mount('#app');
+</script>
+</body>
+</html>
