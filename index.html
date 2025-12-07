@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奶油風單據產生器 (本機穩定版)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        /* --- 基礎設定 & 奶油風變數 --- */
+        :root {
+            --cream-bg: #FDFBF7;
+            --cream-card: #FFFFFF;
+            --primary-accent: #EBCB8B;
+            --secondary-accent: #D08770;
+            --text-dark: #4C566A;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(149, 157, 165, 0.1);
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--cream-bg);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card {
+            background: var(--cream-card);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            border: 1px solid #F0EFE9;
+        }
+
+        h1, h2, h3 { margin-top: 0; color: #5E81AC; }
+        
+        /* 介面元件 */
+        .tabs { display: flex; background: #EEE; padding: 4px; border-radius: 30px; display:inline-flex; margin-bottom:15px;}
+        .tab-btn {
+            padding: 8px 24px; border: none; background: transparent; cursor: pointer;
+            border-radius: 25px; font-weight: bold; color: #888; transition: 0.3s;
+        }
+        .tab-btn.active { background: #FFF; color: var(--secondary-accent); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+        
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: #888; }
+        input, textarea, select {
+            width: 100%; padding: 10px; border: 1px solid #E5E9F0; border-radius: 8px;
+            font-size: 1rem; background: #FAFAFA; box-sizing: border-box;
+        }
+        input:focus { outline: none; border-color: var(--primary-accent); background: #FFF; }
+
+        .table-editor { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .table-editor th { text-align: left; padding: 8px; color: #888; font-size: 0.9rem; }
+        .table-editor td { padding: 4px; vertical-align: top; }
+        .btn-icon { background: none; border: none; cursor: pointer; color: #BF616A; font-size: 1.2rem; }
+
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;
+            font-weight: bold; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-primary { background: var(--secondary-accent); color: white; }
+        .btn-success { background: #2E7D32; color: white; }
+        .btn-secondary { background: var(--primary-accent); color: #5D4037; }
+        .btn-outline { background: transparent; border: 1px solid #CCC; color: #666; }
+        
+        /* A4 預覽與列印設定 */
+        .a4-preview-container {
+            background: #555; padding: 40px; display: flex; justify-content: center; overflow-x: auto;
+        }
+        .a4-page {
+            background: white; width: 210mm; min-height: 297mm; padding: 15mm 20mm;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; box-sizing: border-box;
+            font-family: "Microsoft JhengHei", serif;
+        }
+
+        .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .doc-title { font-size: 24pt; font-weight: bold; color: #000; }
+        .doc-meta { text-align: right; font-size: 10pt; line-height: 1.4; }
+        
+        .parties-grid { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 10pt; }
+        .party-box { width: 48%; }
+        .info-row { display: flex; margin-bottom: 4px; }
+        .info-label { width: 70px; color: #666; flex-shrink: 0; }
+        
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 20px; }
+        .doc-table th { border-bottom: 1px solid #000; padding: 6px; text-align: left; background: #FAFAFA; font-weight: bold;}
+        .doc-table td { border-bottom: 1px solid #EEE; padding: 8px 6px; vertical-align: middle; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        .doc-footer { display: flex; justify-content: space-between; page-break-inside: avoid; }
+        .notes-area { width: 60%; font-size: 9pt; color: #444; white-space: pre-wrap; border: 1px solid #EEE; padding: 8px; border-radius: 4px;}
+        .totals-area { width: 35%; font-size: 10pt; }
+        .total-row { display: flex; justify-content: space-between; padding: 4px 0; }
+        .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 12pt; margin-top: 4px; padding-top: 8px;}
+
+        /* 列印模式 (隱藏 UI) */
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print, .header-controls, .card, .btn { display: none !important; }
+            .a4-preview-container { background: white; padding: 0; display: block; }
+            .a4-page { box-shadow: none; margin: 0; width: 100%; page-break-after: always; }
+            @page { size: A4; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="container no-print">
+        <div class="header-controls">
+            <h1>📄 奶油風單據 (本機穩定版)</h1>
+            <div class="tabs">
+                <button class="tab-btn" :class="{ active: docType === 'quote' }" @click="switchDoc('quote')">報價單</button>
+                <button class="tab-btn" :class="{ active: docType === 'delivery' }" @click="switchDoc('delivery')">出貨單</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📝 基本資料</h3>
+            <div class="form-grid">
+                <div>
+                    <h4>我方 (賣方)</h4>
+                    <div class="form-group"><input v-model="seller.name" placeholder="公司名稱"></div>
+                    <div class="form-group"><input v-model="seller.phone" placeholder="電話/統編"></div>
+                    <div class="form-group"><input v-model="seller.address" placeholder="地址"></div>
+                    <button class="btn btn-outline" style="font-size:0.8rem; padding:4px 8px;" @click="saveSellerToLocal">儲存預設</button>
+                    <button class="btn btn-outline" style="font-size:0.8rem; padding:4px 8px;" @click="loadDemoData">🧪 載入範例</button>
+                </div>
+                <div>
+                    <h4>客戶 (買方)</h4>
+                    <div class="form-group"><input v-model="buyer.name" placeholder="客戶公司名稱"></div>
+                    <div class="form-group"><input v-model="buyer.taxId" placeholder="統一編號"></div>
+                    <div class="form-group"><input v-model="buyer.contact" placeholder="聯絡人"></div>
+                </div>
+            </div>
+            <hr style="border-top: 1px dashed #DDD; margin: 20px 0;">
+            <div class="form-grid">
+                <div>
+                    <label>單號 (點按鈕刷新)</label>
+                    <div style="display:flex; gap:5px;">
+                        <input v-model="docNumber" style="flex:1">
+                        <button class="btn btn-outline" @click="generateDocNumber">⟳</button>
+                    </div>
+                </div>
+                <div>
+                    <label>日期</label>
+                    <input type="date" v-model="date">
+                </div>
+                <div>
+                    <label>稅務</label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <select v-model="taxType" style="flex:1">
+                            <option value="excluded">外加稅 (未稅)</option>
+                            <option value="included">內含稅 (含稅)</option>
+                        </select>
+                        <input type="number" v-model.number="taxRate" style="width: 60px"> %
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>📦 品項</h3>
+                <div v-if="docType === 'quote'" style="background:#FFF8E1; padding:4px 12px; border-radius:20px; border:1px solid #FFE082; font-size:0.9rem;">
+                    標題：
+                    <label style="display:inline; margin:0 5px;"><input type="radio" value="qty" v-model="quoteQtyLabel">數量</label>
+                    <label style="display:inline;"><input type="radio" value="moq" v-model="quoteQtyLabel">MOQ</label>
+                </div>
+            </div>
+            
+            <table class="table-editor">
+                <thead>
+                    <tr>
+                        <th width="30"></th>
+                        <th>品名</th>
+                        <th width="100">{{ docType === 'quote' ? '批發價' : '單價' }}</th>
+                        <th width="80">{{ docType === 'quote' ? (quoteQtyLabel === 'moq'?'MOQ':'數量') : '數量' }}</th>
+                        <th width="60" v-if="docType==='quote'">單位</th>
+                        <th width="100" class="text-right">小計</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item, index) in items" :key="index">
+                        <td><button class="btn-icon" @click="removeItem(index)">×</button></td>
+                        <td><input v-model="item.name"></td>
+                        <td><input type="number" v-model.number="item.price"></td>
+                        <td><input type="number" v-model.number="item.quantity"></td>
+                        <td v-if="docType==='quote'"><input v-model="item.unit"></td>
+                        <td class="text-right" style="vertical-align:middle;">{{ formatNumber(calculateRowTotal(item)) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="btn btn-outline" style="margin-top:10px; width:100%" @click="addItem">+ 新增品項</button>
+        </div>
+
+        <div class="card">
+            <h3>📝 輸出</h3>
+            <textarea v-model="notes" rows="3" placeholder="備註..."></textarea>
+            
+            <div class="btn-group">
+                <button class="btn btn-secondary" @click="saveToLocal">💾 暫存</button>
+                <button class="btn btn-outline" @click="clearData">🗑️ 清除</button>
+                
+                <button class="btn btn-success" @click="exportExcel">
+                    📊 匯出 Excel
+                </button>
+                
+                <button class="btn btn-primary" @click="printWindow">
+                    🖨️ 列印 / 存為 PDF
+                </button>
+            </div>
+            <p style="font-size:0.9rem; color:#D08770; background:#FFF5F5; padding:8px; border-radius:6px; margin-top:10px;">
+                💡 <strong>PDF 提示：</strong> 點擊上方藍色按鈕，在跳出的視窗中，印表機/目的地請選擇 <strong>「另存為 PDF」</strong>。
+            </p>
+        </div>
+    </div>
+
+    <div class="a4-preview-container">
+        <div class="a4-page">
+            <div class="doc-header">
+                <div class="doc-title">{{ docTitle }}</div>
+                <div class="doc-meta">
+                    <div>單號：{{ docNumber }}</div>
+                    <div>日期：{{ date }}</div>
+                </div>
+            </div>
+
+            <div class="parties-grid">
+                <div class="party-box">
+                    <div style="font-weight:bold; background:#EEE; padding:2px 5px; margin-bottom:5px;">賣方 (From)</div>
+                    <div class="info-row"><span class="info-label">公司：</span><span>{{ seller.name }}</span></div>
+                    <div class="info-row"><span class="info-label">電話：</span><span>{{ seller.phone }}</span></div>
+                    <div class="info-row"><span class="info-label">地址：</span><span>{{ seller.address }}</span></div>
+                </div>
+                <div class="party-box">
+                    <div style="font-weight:bold; background:#EEE; padding:2px 5px; margin-bottom:5px;">買方 (To)</div>
+                    <div class="info-row"><span class="info-label">公司：</span><span>{{ buyer.name }}</span></div>
+                    <div class="info-row"><span class="info-label">統編：</span><span>{{ buyer.taxId }}</span></div>
+                    <div class="info-row"><span class="info-label">聯絡：</span><span>{{ buyer.contact }}</span></div>
+                </div>
+            </div>
+
+            <table class="doc-table">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th>品名</th>
+                        <th width="20%" class="text-right">{{ docType === 'quote' ? '批發價' : '單價' }}</th>
+                        <th width="15%" class="text-center">{{ docType === 'quote' ? (quoteQtyLabel === 'moq'?'MOQ':'數量') : '數量' }}</th>
+                        <th width="10%" class="text-center" v-if="docType === 'quote'">單位</th>
+                        <th width="20%" class="text-right">金額</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item, index) in printableItems" :key="index">
+                        <td>{{ index + 1 }}</td>
+                        <td>{{ item.name }}</td>
+                        <td class="text-right">{{ formatNumber(item.price) }}</td>
+                        <td class="text-center">{{ item.quantity }}</td>
+                        <td class="text-center" v-if="docType === 'quote'">{{ item.unit }}</td>
+                        <td class="text-right">{{ formatNumber(calculateRowTotal(item)) }}</td>
+                    </tr>
+                    <tr v-for="n in (Math.max(0, 8 - printableItems.length))" :key="'empty-'+n" style="height: 33px;">
+                        <td></td><td></td><td></td><td></td><td v-if="docType === 'quote'"></td><td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="doc-footer">
+                <div class="notes-area">
+                    <strong>備註：</strong><br>{{ notes }}
+                </div>
+                <div class="totals-area">
+                    <div class="total-row"><span>未稅：</span><span>$ {{ formatNumber(totals.subtotal) }}</span></div>
+                    <div class="total-row"><span>稅額 ({{ taxRate }}%)：</span><span>$ {{ formatNumber(totals.tax) }}</span></div>
+                    <div class="total-row final"><span>總計：</span><span>$ {{ formatNumber(totals.total) }}</span></div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 50px; display: flex; justify-content: space-between; text-align:center;">
+                <div style="width: 40%; border-top: 1px solid #000; padding-top: 5px;">買方簽署</div>
+                <div style="width: 40%; border-top: 1px solid #000; padding-top: 5px;">賣方簽署</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                docType: 'quote',
+                docNumber: '',
+                date: new Date().toISOString().split('T')[0],
+                taxType: 'excluded', taxRate: 5, quoteQtyLabel: 'moq',
+                seller: { name: '', phone: '', address: '' },
+                buyer: { name: '', taxId: '', contact: '' },
+                items: [], notes: '',
+            }
+        },
+        computed: {
+            docTitle() { return this.docType === 'quote' ? '報 價 單 (Quotation)' : '出 貨 單 (Delivery Note)'; },
+            printableItems() { return this.items.filter(i => i.name || i.price || i.quantity); },
+            totals() {
+                let linesSum = this.items.reduce((acc, item) => acc + this.calculateRowTotal(item), 0);
+                let subtotal = 0, tax = 0, total = 0;
+                if (this.taxType === 'excluded') {
+                    subtotal = linesSum; tax = Math.round(subtotal * (this.taxRate / 100)); total = subtotal + tax;
+                } else {
+                    total = linesSum; subtotal = Math.round(total / (1 + (this.taxRate / 100))); tax = total - subtotal;
+                }
+                return { subtotal, tax, total };
+            }
+        },
+        methods: {
+            switchDoc(type) { this.docType = type; this.generateDocNumber(); if (this.items.length === 0) this.initItems(); },
+            generateDocNumber() {
+                const prefix = this.docType === 'quote' ? 'Q' : 'D';
+                const now = new Date();
+                const str = now.toISOString().slice(0,10).replace(/-/g,'');
+                this.docNumber = `${prefix}-${str}-${Math.floor(1000+Math.random()*9000)}`;
+            },
+            initItems() { this.items = Array.from({ length: 5 }, () => ({ name: '', price: 0, quantity: 1, unit: '' })); },
+            addItem() { this.items.push({ name: '', price: 0, quantity: 1, unit: '' }); },
+            removeItem(index) { if (this.items.length > 1) this.items.splice(index, 1); else this.items[0] = { name: '', price: 0, quantity: 1, unit: '' }; },
+            calculateRowTotal(item) { return Math.round((item.price || 0) * (item.quantity || 0)); },
+            formatNumber(num) { return num ? num.toLocaleString('en-US') : '0'; },
+            
+            saveSellerToLocal() { localStorage.setItem('creamApp_sellerDefault', JSON.stringify(this.seller)); alert('已儲存！'); },
+            saveToLocal() { localStorage.setItem('creamApp_tempData', JSON.stringify({ seller: this.seller, buyer: this.buyer, items: this.items, notes: this.notes })); alert('暫存成功'); },
+            loadDemoData() {
+                this.seller = { name: '谷芳有機茶園', phone: '0912-345-678', address: '新北市三峽區' };
+                this.buyer = { name: '範例客戶', taxId: '12345678', contact: '陳先生' };
+                this.items = [{ name: '碧螺春', price: 1200, quantity: 20, unit: '斤' }];
+            },
+            clearData() { if(confirm('清空？')) { this.initItems(); this.generateDocNumber(); } },
+
+            printWindow() { window.print(); },
+            
+            exportExcel() {
+                // 檢查 SheetJS 是否載入成功
+                if (typeof XLSX === 'undefined') {
+                    alert("❌ 匯出失敗：無法載入 Excel 程式庫。\n\n請確認您的電腦已連接網路（需要載入 CDN），或者瀏覽器沒有擋住 Script。");
+                    return;
+                }
+                
+                // 執行匯出
+                const infoData = [
+                    ["單據類型", this.docTitle], ["單號", this.docNumber], ["日期", this.date],
+                    [], ["賣方", this.seller.name], ["買方", this.buyer.name], [],
+                    ["總計", this.totals.total], ["備註", this.notes]
+                ];
+                let qtyHeader = (this.docType === 'quote' && this.quoteQtyLabel === 'moq') ? 'MOQ' : '數量';
+                let headers = this.docType === 'quote' ? ["品名", "批發價", qtyHeader, "單位", "小計"] : ["品名", "數量", "單價", "小計"];
+                
+                const itemRows = this.items.filter(i => i.name).map(i => {
+                    const total = this.calculateRowTotal(i);
+                    return this.docType === 'quote' ? [i.name, i.price, i.quantity, i.unit, total] : [i.name, i.quantity, i.price, total];
+                });
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infoData), "資訊");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headers, ...itemRows]), "明細");
+                XLSX.writeFile(wb, `${this.docNumber}.xlsx`);
+            },
+            
+            loadFromLocal() {
+                const s = localStorage.getItem('creamApp_sellerDefault');
+                if (s) this.seller = JSON.parse(s);
+            }
+        },
+        mounted() { this.generateDocNumber(); this.initItems(); this.loadFromLocal(); }
+    }).mount('#app');
+</script>
+</body>
+</html>
