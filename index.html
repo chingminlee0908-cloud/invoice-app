@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        /* --- 1. 核心變數與背景 (奶油玻璃風) --- */
+        /* --- 1. 核心變數 (奶油玻璃風) --- */
         :root {
             --primary-accent: #EBCB8B;   /* 奶油黃 */
             --secondary-accent: #D08770; /* 柔和橘 */
@@ -32,7 +32,7 @@
 
         .container { max-width: 1000px; margin: 0 auto; }
 
-        /* --- 2. UI 卡片設計 --- */
+        /* --- 2. 卡片樣式 --- */
         .card {
             background: var(--glass-bg);
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
@@ -58,7 +58,7 @@
             .tabs { width: auto; min-width: 240px; }
         }
 
-        /* --- 4. 表單與輸入 --- */
+        /* --- 4. 表單排版 --- */
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; gap: 20px; } }
         
@@ -85,7 +85,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* --- 6. 按鈕樣式 --- */
+        /* --- 6. 按鈕 --- */
         .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
         @media (min-width: 768px) { .btn-group { flex-direction: row; } }
         
@@ -103,7 +103,7 @@
         .btn-outline { background: rgba(255,255,255,0.8); border: 1px solid #CCC; color: #666; }
         .btn-sm { padding: 5px 10px; font-size: 0.85rem; border-radius: 8px; border: 1px solid #CCC; background: rgba(255,255,255,0.6); cursor: pointer; color: #666; }
 
-        /* --- 7. A4 預覽區 (螢幕顯示用) --- */
+        /* --- 7. A4 預覽區 (螢幕顯示) --- */
         .preview-controls {
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(255,255,255,0.5); padding: 10px; border-radius: 12px; margin-top: 20px;
@@ -118,10 +118,10 @@
         
         .a4-page {
             background: white; 
-            width: 794px; 
+            width: 794px; /* A4 96dpi 寬度 */
             min-height: 1123px; 
-            height: auto; 
-            padding: 50px 60px; /* 增加內距，讓螢幕預覽也好看 */
+            height: auto; /* 自動長高 */
+            padding: 50px 60px; /* 螢幕預覽時的內距 */
             box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
             display: inline-block; text-align: left;
             box-sizing: border-box;
@@ -129,50 +129,31 @@
             transform-origin: top center; transition: transform 0.3s ease;
         }
 
-        /* --- 8. A4 內部排版樣式 (已優化留白) --- */
-        /* 加大區塊間距，避免擁擠 */
-        .doc-header { 
-            display: flex; justify-content: space-between; align-items: flex-end; 
-            border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 30px; 
-        }
+        /* --- 8. A4 內部排版 (寬敞版) --- */
+        .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 25px; }
         .doc-title { font-size: 24pt; font-weight: bold; color: #000; text-shadow: none; }
         .doc-meta { text-align: right; font-size: 10pt; line-height: 1.6; }
         
-        .parties-grid { 
-            display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 10pt; 
-        }
+        .parties-grid { display: flex; justify-content: space-between; margin-bottom: 25px; font-size: 10pt; }
         .party-box { width: 48%; }
-        .info-row { display: flex; margin-bottom: 6px; line-height: 1.4; } /* 增加行距 */
-        .info-label { width: 70px; color: #555; flex-shrink: 0; font-weight: bold;}
+        .info-row { display: flex; margin-bottom: 6px; line-height: 1.4; }
+        .info-label { width: 70px; color: #666; flex-shrink: 0; font-weight: bold;}
         
-        .doc-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 30px; }
-        /* 表格內部留白加大 */
-        .doc-table th { 
-            border-bottom: 1px solid #000; padding: 10px 8px; text-align: left; 
-            background: #FAFAFA; font-weight: bold; 
-        }
-        .doc-table td { 
-            border-bottom: 1px solid #EEE; padding: 12px 8px; vertical-align: top; 
-        }
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 25px; }
+        .doc-table th { border-bottom: 1px solid #000; padding: 10px 8px; text-align: left; background: #FAFAFA; font-weight: bold; }
+        .doc-table td { border-bottom: 1px solid #EEE; padding: 12px 8px; vertical-align: top; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         
         .doc-footer { display: flex; justify-content: space-between; margin-top: 20px; }
-        .notes-area { 
-            width: 60%; font-size: 9pt; color: #444; white-space: pre-wrap; line-height: 1.6;
-            border: 1px dashed #DDD; padding: 15px; border-radius: 8px; /* 備註框美化 */
-        }
+        .notes-area { width: 60%; font-size: 9pt; color: #444; white-space: pre-wrap; border: 1px dashed #DDD; padding: 12px; border-radius: 4px; line-height: 1.6; }
         .totals-area { width: 35%; font-size: 11pt; }
-        .total-row { display: flex; justify-content: space-between; padding: 6px 0; } /* 金額列間距 */
-        .total-row.final { 
-            border-top: 2px solid #000; font-weight: bold; font-size: 13pt; 
-            margin-top: 10px; padding-top: 10px; 
-        }
+        .total-row { display: flex; justify-content: space-between; padding: 6px 0; }
+        .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 13pt; margin-top: 10px; padding-top: 10px; }
 
-        /* --- 9. 列印專用設定 (@media print) --- */
-        /* 解決滿版問題的核心 */
+        /* --- 9. 列印專用設定 (解決滿版問題的核心) --- */
         @media print {
-            /* 1. 設定寬敞的邊界 (20mm)，解決滿版壓迫感 */
+            /* 1. 設定 20mm (2公分) 的物理邊界，這是最標準的商務文件規格 */
             @page { size: A4; margin: 20mm; } 
             
             body { background: white; margin: 0; padding: 0; }
@@ -185,8 +166,8 @@
             
             .a4-page { 
                 width: 100% !important; margin: 0 !important; 
-                /* 列印時移除內距，完全由 @page margin 控制，避免雙重留白或過小 */
-                padding: 0 !important; 
+                /* 關鍵：列印時加上內縮 padding，確保內容不會貼到 @page 的邊界上，形成「雙重保險」的留白 */
+                padding: 0 10mm !important; 
                 box-shadow: none !important; transform: none !important; 
                 border: none;
             }
