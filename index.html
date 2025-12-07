@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>奶油風單據產生器 (本機穩定版)</title>
+    <title>谷芳茶業有限公司 - 單據系統</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
         /* --- 基礎設定 & 奶油風變數 --- */
@@ -78,10 +79,11 @@
         .a4-preview-container {
             background: #555; padding: 40px; display: flex; justify-content: center; overflow-x: auto;
         }
+        /* 為了配合 html2pdf 下載，這裡指定像素寬度 (約等於 A4 96dpi) */
         .a4-page {
-            background: white; width: 210mm; min-height: 297mm; padding: 15mm 20mm;
+            background: white; width: 794px; min-height: 1123px; padding: 40px 60px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; box-sizing: border-box;
-            font-family: "Microsoft JhengHei", serif;
+            font-family: "Microsoft JhengHei", serif; margin: 0 auto;
         }
 
         .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
@@ -109,7 +111,7 @@
         @media print {
             body { background: white; margin: 0; padding: 0; }
             .no-print, .header-controls, .card, .btn { display: none !important; }
-            .a4-preview-container { background: white; padding: 0; display: block; }
+            .a4-preview-container { background: white; padding: 0; display: block; margin: 0; }
             .a4-page { box-shadow: none; margin: 0; width: 100%; page-break-after: always; }
             @page { size: A4; margin: 0; }
         }
@@ -120,7 +122,7 @@
 <div id="app">
     <div class="container no-print">
         <div class="header-controls">
-            <h1>📄 奶油風單據 (本機穩定版)</h1>
+            <h1>🍵 谷芳茶業有限公司 - 單據系統</h1>
             <div class="tabs">
                 <button class="tab-btn" :class="{ active: docType === 'quote' }" @click="switchDoc('quote')">報價單</button>
                 <button class="tab-btn" :class="{ active: docType === 'delivery' }" @click="switchDoc('delivery')">出貨單</button>
@@ -135,8 +137,7 @@
                     <div class="form-group"><input v-model="seller.name" placeholder="公司名稱"></div>
                     <div class="form-group"><input v-model="seller.phone" placeholder="電話/統編"></div>
                     <div class="form-group"><input v-model="seller.address" placeholder="地址"></div>
-                    <button class="btn btn-outline" style="font-size:0.8rem; padding:4px 8px;" @click="saveSellerToLocal">儲存預設</button>
-                    <button class="btn btn-outline" style="font-size:0.8rem; padding:4px 8px;" @click="loadDemoData">🧪 載入範例</button>
+                    <button class="btn btn-outline" style="font-size:0.8rem; padding:4px 8px;" @click="saveSellerToLocal">💾 儲存為預設值</button>
                 </div>
                 <div>
                     <h4>客戶 (買方)</h4>
@@ -218,18 +219,19 @@
                     📊 匯出 Excel
                 </button>
                 
+                <button class="btn btn-primary" @click="downloadPDF">
+                    💾 下載 PDF
+                </button>
+                
                 <button class="btn btn-primary" @click="printWindow">
                     🖨️ 列印 / 存為 PDF
                 </button>
             </div>
-            <p style="font-size:0.9rem; color:#D08770; background:#FFF5F5; padding:8px; border-radius:6px; margin-top:10px;">
-                💡 <strong>PDF 提示：</strong> 點擊上方藍色按鈕，在跳出的視窗中，印表機/目的地請選擇 <strong>「另存為 PDF」</strong>。
-            </p>
         </div>
     </div>
 
     <div class="a4-preview-container">
-        <div class="a4-page">
+        <div class="a4-page" id="pdf-content">
             <div class="doc-header">
                 <div class="doc-title">{{ docTitle }}</div>
                 <div class="doc-meta">
@@ -308,7 +310,8 @@
                 docNumber: '',
                 date: new Date().toISOString().split('T')[0],
                 taxType: 'excluded', taxRate: 5, quoteQtyLabel: 'moq',
-                seller: { name: '', phone: '', address: '' },
+                // 預設填入：谷芳茶業有限公司
+                seller: { name: '谷芳茶業有限公司', phone: '', address: '' },
                 buyer: { name: '', taxId: '', contact: '' },
                 items: [], notes: '',
             }
@@ -344,22 +347,33 @@
             saveSellerToLocal() { localStorage.setItem('creamApp_sellerDefault', JSON.stringify(this.seller)); alert('已儲存！'); },
             saveToLocal() { localStorage.setItem('creamApp_tempData', JSON.stringify({ seller: this.seller, buyer: this.buyer, items: this.items, notes: this.notes })); alert('暫存成功'); },
             loadDemoData() {
-                this.seller = { name: '谷芳有機茶園', phone: '0912-345-678', address: '新北市三峽區' };
+                // 這裡只載入買方範例，不覆蓋賣方
                 this.buyer = { name: '範例客戶', taxId: '12345678', contact: '陳先生' };
                 this.items = [{ name: '碧螺春', price: 1200, quantity: 20, unit: '斤' }];
             },
             clearData() { if(confirm('清空？')) { this.initItems(); this.generateDocNumber(); } },
 
             printWindow() { window.print(); },
+
+            // 新增：直接下載 PDF 功能 (因為你在 GitHub 上，這是安全的)
+            downloadPDF() {
+                const element = document.getElementById('pdf-content');
+                const opt = {
+                    margin: 0,
+                    filename: this.docNumber + '.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
+                };
+                html2pdf().set(opt).from(element).save();
+            },
             
             exportExcel() {
-                // 檢查 SheetJS 是否載入成功
                 if (typeof XLSX === 'undefined') {
                     alert("❌ 匯出失敗：無法載入 Excel 程式庫。\n\n請確認您的電腦已連接網路（需要載入 CDN），或者瀏覽器沒有擋住 Script。");
                     return;
                 }
                 
-                // 執行匯出
                 const infoData = [
                     ["單據類型", this.docTitle], ["單號", this.docNumber], ["日期", this.date],
                     [], ["賣方", this.seller.name], ["買方", this.buyer.name], [],
