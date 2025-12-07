@@ -207,7 +207,7 @@
                 </tbody>
             </table>
             <button class="btn btn-outline" style="margin-top:10px; width:100%" @click="addItem">+ 新增品項</button>
-
+            
             <datalist id="unit-options">
                 <option value="盒"></option>
                 <option value="克"></option>
@@ -325,6 +325,11 @@
                 items: [], notes: '',
             }
         },
+        watch: {
+            // 自動更新網頁標題 (解決列印檔名問題)
+            docNumber(newVal) { this.updateTitle(); },
+            'buyer.name'(newVal) { this.updateTitle(); }
+        },
         computed: {
             docTitle() { return this.docType === 'quote' ? '報 價 單 (Quotation)' : '出 貨 單 (Delivery Note)'; },
             printableItems() { return this.items.filter(i => i.name || i.price || i.quantity); },
@@ -340,6 +345,12 @@
             }
         },
         methods: {
+            // 更新網頁標題的方法
+            updateTitle() {
+                const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
+                document.title = `${this.docNumber}${clientName}`;
+            },
+            
             switchDoc(type) { this.docType = type; this.generateDocNumber(); if (this.items.length === 0) this.initItems(); },
             generateDocNumber() {
                 const prefix = this.docType === 'quote' ? 'Q' : 'D';
@@ -363,16 +374,26 @@
 
             printWindow() { window.print(); },
 
+            // 修復版下載 PDF：強制白色背景
             downloadPDF() {
                 const element = document.getElementById('pdf-content');
+                
+                // 強制設定背景色，避免變透明或空白
+                const originalBg = element.style.backgroundColor;
+                element.style.backgroundColor = '#ffffff';
+
                 const opt = {
                     margin: 0,
                     filename: this.docNumber + '.pdf',
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2 },
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' }, // 關鍵修復
                     jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
                 };
-                html2pdf().set(opt).from(element).save();
+                
+                html2pdf().set(opt).from(element).save().then(() => {
+                     // 下載後復原背景設定（雖然本來就是白，但為了保險）
+                     element.style.backgroundColor = originalBg;
+                });
             },
             
             exportExcel() {
@@ -389,7 +410,6 @@
                     [],
                     ["總計", this.totals.total], ["備註", this.notes]
                 ];
-                // 這裡也同步更新 Excel 標題
                 let qtyHeader = (this.docType === 'quote' && this.quoteQtyLabel === 'moq') ? 'MOQ 最低購買數量' : '數量';
                 let headers = this.docType === 'quote' ? ["品名", "批發價", qtyHeader, "單位", "小計"] : ["品名", "數量", "單價", "小計"];
                 
@@ -409,7 +429,7 @@
                 if (s) this.seller = JSON.parse(s);
             }
         },
-        mounted() { this.generateDocNumber(); this.initItems(); this.loadFromLocal(); }
+        mounted() { this.generateDocNumber(); this.initItems(); this.loadFromLocal(); this.updateTitle(); }
     }).mount('#app');
 </script>
 </body>
