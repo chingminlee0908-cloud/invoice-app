@@ -213,6 +213,8 @@
                 <option value="克"></option>
                 <option value="台斤"></option>
                 <option value="包"></option>
+                <option value="罐"></option>
+                <option value="組"></option>
             </datalist>
         </div>
 
@@ -326,7 +328,6 @@
             }
         },
         watch: {
-            // 自動更新網頁標題 (解決列印檔名問題)
             docNumber(newVal) { this.updateTitle(); },
             'buyer.name'(newVal) { this.updateTitle(); }
         },
@@ -345,7 +346,6 @@
             }
         },
         methods: {
-            // 更新網頁標題的方法
             updateTitle() {
                 const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
                 document.title = `${this.docNumber}${clientName}`;
@@ -374,11 +374,9 @@
 
             printWindow() { window.print(); },
 
-            // 修復版下載 PDF：強制白色背景
+            // 修復版下載 PDF：加入 windowWidth 強制模擬桌面寬度
             downloadPDF() {
                 const element = document.getElementById('pdf-content');
-                
-                // 強制設定背景色，避免變透明或空白
                 const originalBg = element.style.backgroundColor;
                 element.style.backgroundColor = '#ffffff';
 
@@ -386,12 +384,16 @@
                     margin: 0,
                     filename: this.docNumber + '.pdf',
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' }, // 關鍵修復
+                    html2canvas: { 
+                        scale: 2, 
+                        useCORS: true, 
+                        backgroundColor: '#ffffff',
+                        windowWidth: 1200 // 關鍵修復：強制瀏覽器認為這是寬螢幕，避免手機跑版
+                    },
                     jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
                 };
                 
                 html2pdf().set(opt).from(element).save().then(() => {
-                     // 下載後復原背景設定（雖然本來就是白，但為了保險）
                      element.style.backgroundColor = originalBg;
                 });
             },
