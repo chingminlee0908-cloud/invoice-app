@@ -25,10 +25,9 @@
             margin: 0;
             padding: 15px;
             min-height: 100vh;
-            /* 溫暖漸層背景 */
             background: linear-gradient(135deg, #FDFBF7 0%, #F8E6C8 50%, #F2D7B6 100%);
             background-attachment: fixed;
-            touch-action: manipulation; /* 優化手機觸控體驗 */
+            touch-action: manipulation;
         }
 
         .container { max-width: 1000px; margin: 0 auto; }
@@ -72,7 +71,7 @@
         }
         input:focus, textarea:focus { outline: none; background: #FFF; border-color: var(--primary-accent); box-shadow: 0 0 0 3px rgba(235, 203, 139, 0.3); }
 
-        /* --- 5. 表格區塊 (手機橫向滑動) --- */
+        /* --- 5. 表格區塊 --- */
         .table-wrapper {
             width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
             margin-bottom: 10px; border-radius: 12px; background: rgba(255,255,255,0.3);
@@ -113,16 +112,16 @@
         
         .a4-preview-container {
             background: rgba(0,0,0,0.05); padding: 20px; 
-            display: block; text-align: center; /* 讓內容居中 */
+            display: block; text-align: center;
             overflow-x: auto; border-radius: 12px; margin-top: 10px;
         }
         
         .a4-page {
             background: white; 
-            width: 794px; /* A4 96dpi 寬度 */
+            width: 794px; 
             min-height: 1123px; 
-            height: auto; /* 自動長高，避免螢幕預覽被切 */
-            padding: 40px 60px;
+            height: auto; 
+            padding: 50px 60px; /* 增加內距，讓螢幕預覽也好看 */
             box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
             display: inline-block; text-align: left;
             box-sizing: border-box;
@@ -130,33 +129,51 @@
             transform-origin: top center; transition: transform 0.3s ease;
         }
 
-        /* --- 8. A4 內部排版樣式 --- */
-        .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        /* --- 8. A4 內部排版樣式 (已優化留白) --- */
+        /* 加大區塊間距，避免擁擠 */
+        .doc-header { 
+            display: flex; justify-content: space-between; align-items: flex-end; 
+            border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 30px; 
+        }
         .doc-title { font-size: 24pt; font-weight: bold; color: #000; text-shadow: none; }
-        .doc-meta { text-align: right; font-size: 10pt; line-height: 1.4; }
+        .doc-meta { text-align: right; font-size: 10pt; line-height: 1.6; }
         
-        .parties-grid { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 10pt; }
+        .parties-grid { 
+            display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 10pt; 
+        }
         .party-box { width: 48%; }
-        .info-row { display: flex; margin-bottom: 4px; }
-        .info-label { width: 70px; color: #666; flex-shrink: 0; }
+        .info-row { display: flex; margin-bottom: 6px; line-height: 1.4; } /* 增加行距 */
+        .info-label { width: 70px; color: #555; flex-shrink: 0; font-weight: bold;}
         
-        .doc-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 20px; }
-        .doc-table th { border-bottom: 1px solid #000; padding: 6px; text-align: left; background: #FAFAFA; font-weight: bold; }
-        .doc-table td { border-bottom: 1px solid #EEE; padding: 8px 6px; vertical-align: top; }
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 30px; }
+        /* 表格內部留白加大 */
+        .doc-table th { 
+            border-bottom: 1px solid #000; padding: 10px 8px; text-align: left; 
+            background: #FAFAFA; font-weight: bold; 
+        }
+        .doc-table td { 
+            border-bottom: 1px solid #EEE; padding: 12px 8px; vertical-align: top; 
+        }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         
-        .doc-footer { display: flex; justify-content: space-between; margin-top: 10px; }
-        .notes-area { width: 60%; font-size: 9pt; color: #444; white-space: pre-wrap; border: 1px solid #EEE; padding: 8px; border-radius: 4px; }
-        .totals-area { width: 35%; font-size: 10pt; }
-        .total-row { display: flex; justify-content: space-between; padding: 4px 0; }
-        .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 12pt; margin-top: 4px; padding-top: 8px; }
+        .doc-footer { display: flex; justify-content: space-between; margin-top: 20px; }
+        .notes-area { 
+            width: 60%; font-size: 9pt; color: #444; white-space: pre-wrap; line-height: 1.6;
+            border: 1px dashed #DDD; padding: 15px; border-radius: 8px; /* 備註框美化 */
+        }
+        .totals-area { width: 35%; font-size: 11pt; }
+        .total-row { display: flex; justify-content: space-between; padding: 6px 0; } /* 金額列間距 */
+        .total-row.final { 
+            border-top: 2px solid #000; font-weight: bold; font-size: 13pt; 
+            margin-top: 10px; padding-top: 10px; 
+        }
 
         /* --- 9. 列印專用設定 (@media print) --- */
-        /* 這是解決「畫面切割」與「斷頁亂掉」的核心 */
+        /* 解決滿版問題的核心 */
         @media print {
-            /* 設定 A4 紙張與邊界，讓瀏覽器自動處理換頁 */
-            @page { size: A4; margin: 15mm; } 
+            /* 1. 設定寬敞的邊界 (20mm)，解決滿版壓迫感 */
+            @page { size: A4; margin: 20mm; } 
             
             body { background: white; margin: 0; padding: 0; }
             .no-print, .header-controls, .card, .btn-group, .preview-controls { display: none !important; }
@@ -167,18 +184,17 @@
             }
             
             .a4-page { 
-                width: 100% !important; margin: 0 !important; padding: 0 !important; 
-                box-shadow: none !important; transform: none !important; /* 禁止列印時縮放 */
+                width: 100% !important; margin: 0 !important; 
+                /* 列印時移除內距，完全由 @page margin 控制，避免雙重留白或過小 */
+                padding: 0 !important; 
+                box-shadow: none !important; transform: none !important; 
                 border: none;
             }
 
-            /* 關鍵：表格標題在每一頁重複出現 */
+            /* 表格標題跨頁重複 */
             thead { display: table-header-group; }
-            
-            /* 關鍵：防止表格的某一行被切成兩半 */
+            /* 防止內容腰斬 */
             tr { page-break-inside: avoid; break-inside: avoid; }
-            
-            /* 關鍵：防止底部簽名區被切斷 */
             .doc-footer, .signature-section { page-break-inside: avoid; break-inside: avoid; }
         }
     </style>
@@ -310,13 +326,13 @@
 
             <div class="parties-grid">
                 <div class="party-box">
-                    <div style="font-weight:bold; background:#EEE; padding:2px 5px; margin-bottom:5px;">賣方 (From)</div>
+                    <div style="font-weight:bold; background:#EEE; padding:4px 8px; margin-bottom:8px; border-radius:4px;">賣方 (From)</div>
                     <div class="info-row"><span class="info-label">公司：</span><span>{{ seller.name }}</span></div>
                     <div class="info-row"><span class="info-label">電話：</span><span>{{ seller.phone }}</span></div>
                     <div class="info-row"><span class="info-label">地址：</span><span>{{ seller.address }}</span></div>
                 </div>
                 <div class="party-box">
-                    <div style="font-weight:bold; background:#EEE; padding:2px 5px; margin-bottom:5px;">買方 (To)</div>
+                    <div style="font-weight:bold; background:#EEE; padding:4px 8px; margin-bottom:8px; border-radius:4px;">買方 (To)</div>
                     <div class="info-row"><span class="info-label">公司：</span><span>{{ buyer.name }}</span></div>
                     <div class="info-row"><span class="info-label">統編：</span><span>{{ buyer.taxId }}</span></div>
                     <div class="info-row"><span class="info-label">聯絡：</span><span>{{ buyer.contact }}</span></div>
@@ -358,9 +374,9 @@
                 </div>
             </div>
             
-            <div class="signature-section" style="margin-top: 50px; display: flex; justify-content: space-between; text-align:center;">
-                <div style="width: 40%; border-top: 1px solid #000; padding-top: 5px;">買方簽署</div>
-                <div style="width: 40%; border-top: 1px solid #000; padding-top: 5px;">賣方簽署</div>
+            <div class="signature-section" style="margin-top: 60px; display: flex; justify-content: space-between; text-align:center;">
+                <div style="width: 40%; border-top: 1px solid #000; padding-top: 10px;">買方簽署</div>
+                <div style="width: 40%; border-top: 1px solid #000; padding-top: 10px;">賣方簽署</div>
             </div>
         </div>
     </div>
