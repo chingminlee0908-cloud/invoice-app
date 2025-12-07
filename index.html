@@ -9,51 +9,69 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        /* --- 基礎設定 --- */
+        /* --- 變數定義：奶油玻璃風 --- */
         :root {
-            --cream-bg: #FDFBF7;
-            --cream-card: #FFFFFF;
-            --primary-accent: #EBCB8B;
-            --secondary-accent: #D08770;
-            --text-dark: #4C566A;
-            --border-radius: 12px;
-            --shadow: 0 4px 12px rgba(149, 157, 165, 0.1);
+            --primary-accent: #EBCB8B;   /* 奶油黃 */
+            --secondary-accent: #D08770; /* 柔和橘 */
+            --text-dark: #4C566A;        /* 深灰藍文字 */
+            --glass-bg: rgba(255, 255, 255, 0.45); /* 卡片半透明背景 */
+            --glass-border: rgba(255, 255, 255, 0.6); /* 玻璃邊框 */
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); /* 浮起陰影 */
         }
 
         body {
             font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--cream-bg);
             color: var(--text-dark);
             margin: 0;
-            padding: 10px; /* 手機版邊距縮小 */
+            padding: 15px;
+            min-height: 100vh;
+            /* 背景升級：奶油漸層，讓玻璃效果更明顯 */
+            background: linear-gradient(135deg, #FDFBF7 0%, #F8E6C8 50%, #F2D7B6 100%);
+            background-attachment: fixed; /* 背景固定，滑動時更有層次感 */
             touch-action: manipulation;
         }
 
         .container { max-width: 1000px; margin: 0 auto; }
 
+        /* --- 核心：液態玻璃卡片 --- */
         .card {
-            background: var(--cream-card);
-            border-radius: var(--border-radius);
-            padding: 15px; /* 手機版內距縮小 */
-            box-shadow: var(--shadow);
-            margin-bottom: 15px;
-            border: 1px solid #F0EFE9;
+            background: var(--glass-bg);
+            /* 關鍵：毛玻璃模糊效果 */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px); /* 支援 iOS */
+            border-radius: 20px; /* 更圓潤的導角 */
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
-        h1 { font-size: 1.4rem; text-align: center; margin: 10px 0 20px 0; color: #5E81AC; }
-        h3 { font-size: 1.1rem; border-left: 5px solid var(--primary-accent); padding-left: 10px; margin: 0 0 15px 0; color: #5E81AC; }
+        h1 { font-size: 1.5rem; text-align: center; margin: 10px 0 20px 0; color: #5E81AC; text-shadow: 0 2px 4px rgba(255,255,255,0.5); }
+        h3 { font-size: 1.2rem; border-left: 5px solid var(--secondary-accent); padding-left: 10px; margin: 0 0 15px 0; color: #434C5E; }
 
-        /* --- 響應式控制區 --- */
+        /* --- 控制元件玻璃化 --- */
         .header-controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .tabs { display: flex; background: #EEE; padding: 4px; border-radius: 30px; width: 100%; max-width: 300px; }
-        .tab-btn { flex: 1; padding: 8px 0; border: none; background: transparent; cursor: pointer; border-radius: 25px; font-weight: bold; color: #888; transition: 0.3s; }
-        .tab-btn.active { background: #FFF; color: var(--secondary-accent); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* 玻璃質感的 Tab */
+        .tabs { 
+            display: flex; 
+            background: rgba(255,255,255,0.3); 
+            padding: 5px; 
+            border-radius: 30px; 
+            width: 100%; max-width: 300px; 
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+        .tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; border-radius: 25px; font-weight: bold; color: #666; transition: 0.3s; }
+        .tab-btn.active { 
+            background: #FFF; 
+            color: var(--secondary-accent); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+        }
 
         @media (min-width: 768px) {
             .header-controls { flex-direction: row; justify-content: space-between; }
             h1 { text-align: left; margin: 0; }
-            .tabs { width: auto; min-width: 200px; }
-            .card { padding: 24px; margin-bottom: 24px; }
+            .tabs { width: auto; min-width: 240px; }
         }
 
         /* --- 表單格線 --- */
@@ -61,78 +79,99 @@
         @media (min-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; gap: 20px; } }
         
         .form-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #888; font-weight: bold; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #555; font-weight: bold; }
+        
+        /* 輸入框：半透明白底，讓文字清楚但保留通透感 */
         input, textarea, select {
-            width: 100%; padding: 10px; border: 1px solid #E5E9F0; border-radius: 8px;
-            font-size: 16px; /* 防止 iOS 縮放 */
-            background: #FAFAFA; box-sizing: border-box; appearance: none;
+            width: 100%; padding: 12px; 
+            border: 1px solid rgba(255,255,255,0.5); 
+            border-radius: 12px;
+            font-size: 16px; 
+            background: rgba(255, 255, 255, 0.6); 
+            box-sizing: border-box; appearance: none;
+            transition: 0.3s;
         }
-        input:focus { outline: none; border-color: var(--primary-accent); background: #FFF; }
+        input:focus, textarea:focus { 
+            outline: none; 
+            background: #FFF; 
+            border-color: var(--primary-accent); 
+            box-shadow: 0 0 0 3px rgba(235, 203, 139, 0.3);
+        }
 
-        /* --- 表格區塊 (手機橫向捲動優化) --- */
+        /* --- 表格區塊 --- */
         .table-wrapper {
             width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
-            margin-bottom: 10px; border: 1px solid #F0F0F0; border-radius: 8px;
+            margin-bottom: 10px; border-radius: 12px; 
+            background: rgba(255,255,255,0.3); /* 表格底色 */
         }
         .table-editor { width: 100%; border-collapse: collapse; min-width: 600px; }
-        .table-editor th { text-align: left; padding: 10px; color: #888; font-size: 0.9rem; background: #FAFAFA; white-space: nowrap; }
+        .table-editor th { 
+            text-align: left; padding: 12px; color: #666; font-size: 0.9rem; 
+            background: rgba(255,255,255,0.5); /* 標題半透明 */
+            white-space: nowrap; 
+        }
         .table-editor td { padding: 8px; vertical-align: top; }
         .btn-icon { 
-            background: #FFF0F0; border: 1px solid #FFCDCD; border-radius: 50%; width: 28px; height: 28px;
+            background: #FFF; border: 1px solid #FFCDCD; border-radius: 50%; width: 30px; height: 30px;
             cursor: pointer; color: #D32F2F; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* --- 按鈕區 --- */
-        .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        /* --- 按鈕 --- */
+        .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
         @media (min-width: 768px) { .btn-group { flex-direction: row; } }
         
         .btn {
-            padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;
+            padding: 14px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem;
             display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+            transition: transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* 按鈕浮起 */
         }
+        .btn:active { transform: scale(0.98); }
         @media (min-width: 768px) { .btn { width: auto; } }
 
-        .btn-primary { background: var(--secondary-accent); color: white; }
-        .btn-success { background: #2E7D32; color: white; }
-        .btn-secondary { background: var(--primary-accent); color: #5D4037; }
-        .btn-outline { background: white; border: 1px solid #CCC; color: #666; }
+        .btn-primary { background: linear-gradient(135deg, #D08770, #C27460); color: white; }
+        .btn-success { background: linear-gradient(135deg, #2E7D32, #1B5E20); color: white; }
+        .btn-secondary { background: linear-gradient(135deg, #EBCB8B, #D4B475); color: #5D4037; }
+        .btn-outline { background: rgba(255,255,255,0.8); border: 1px solid #CCC; color: #666; }
 
         /* --- 預覽控制列 --- */
         .preview-controls {
             display: flex; justify-content: space-between; align-items: center;
-            background: #EEE; padding: 10px; border-radius: 8px; margin-top: 20px;
+            background: rgba(255,255,255,0.5); padding: 10px; border-radius: 12px; margin-top: 20px;
+            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.4);
         }
         .scale-info { font-size: 0.9rem; color: #666; }
 
-        /* --- A4 預覽區 (核心修復) --- */
+        /* --- A4 預覽區 (維持實體紙張感) --- */
         .a4-preview-container {
-            background: #555; 
+            /* 預覽區背景深一點，凸顯 A4 紙張 */
+            background: rgba(0,0,0,0.05); 
             padding: 20px; 
-            /* 關鍵修復：改用 block + text-align center，解決 justify-content: center 切邊問題 */
             display: block; 
             text-align: center;
             overflow-x: auto; 
-            border-radius: 8px;
+            border-radius: 12px;
             margin-top: 10px;
+            border: 1px solid rgba(0,0,0,0.05);
         }
         
         .a4-page {
-            background: white; 
+            background: white; /* 紙張必須是純白 */
             width: 794px; min-height: 1123px; 
             padding: 40px 60px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
-            /* 關鍵：inline-block 配合外層 text-align center */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); /* 紙張陰影 */
             display: inline-block; 
-            text-align: left; /* 內部文字靠左 */
+            text-align: left;
             box-sizing: border-box;
             font-family: "Microsoft JhengHei", serif;
-            transform-origin: top center; /* 縮放基準點 */
-            transition: transform 0.3s ease; /* 縮放動畫 */
+            transform-origin: top center;
+            transition: transform 0.3s ease;
         }
 
-        /* A4 內部樣式 */
+        /* A4 內部樣式 (列印用，保持乾淨) */
         .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .doc-title { font-size: 24pt; font-weight: bold; color: #000; }
+        .doc-title { font-size: 24pt; font-weight: bold; color: #000; text-shadow: none;}
         .doc-meta { text-align: right; font-size: 10pt; line-height: 1.4; }
         .parties-grid { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 10pt; }
         .party-box { width: 48%; }
@@ -149,15 +188,12 @@
         .total-row { display: flex; justify-content: space-between; padding: 4px 0; }
         .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 12pt; margin-top: 4px; padding-top: 8px;}
 
-        /* 列印模式 */
+        /* 列印模式 (確保列印時是乾淨的白紙) */
         @media print {
             body { background: white; margin: 0; padding: 0; }
             .no-print, .header-controls, .card, .btn-group, .preview-controls { display: none !important; }
-            .a4-preview-container { background: white; padding: 0; display: block; margin: 0; overflow: visible; height: auto !important; }
-            .a4-page { 
-                box-shadow: none; margin: 0; width: 100%; transform: none !important; /* 列印時取消縮放 */
-                page-break-after: always; 
-            }
+            .a4-preview-container { background: white; padding: 0; display: block; margin: 0; overflow: visible; height: auto !important; border: none;}
+            .a4-page { box-shadow: none; margin: 0; width: 100%; transform: none !important; page-break-after: always; }
             @page { size: A4; margin: 0; }
         }
     </style>
@@ -167,7 +203,7 @@
 <div id="app">
     <div class="container no-print">
         <div class="header-controls">
-            <h1>🍵 谷芳茶業有限公司 - 單據系統</h1>
+            <h1>🍵 谷芳茶業有限公司</h1>
             <div class="tabs">
                 <button class="tab-btn" :class="{ active: docType === 'quote' }" @click="switchDoc('quote')">報價單</button>
                 <button class="tab-btn" :class="{ active: docType === 'delivery' }" @click="switchDoc('delivery')">出貨單</button>
@@ -192,7 +228,7 @@
                     <div class="form-group"><input v-model="buyer.phone" placeholder="聯絡電話"></div>
                 </div>
             </div>
-            <hr style="border-top: 1px dashed #DDD; margin: 20px 0;">
+            <hr style="border:0; border-top: 1px dashed rgba(0,0,0,0.1); margin: 20px 0;">
             <div class="form-grid">
                 <div>
                     <label>單號 (點按鈕刷新)</label>
@@ -224,7 +260,7 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
                 <h3>📦 品項</h3>
-                <div v-if="docType === 'quote'" style="background:#FFF8E1; padding:5px 10px; border-radius:20px; border:1px solid #FFE082; font-size:0.9rem; margin-left:auto;">
+                <div v-if="docType === 'quote'" style="background:rgba(255,248,225,0.8); padding:5px 10px; border-radius:20px; border:1px solid #FFE082; font-size:0.9rem; margin-left:auto;">
                     <label style="display:inline-flex; align-items:center; margin-right:10px; margin-bottom:0;"><input type="radio" value="qty" v-model="quoteQtyLabel" style="margin-right:5px;">數量</label>
                     <label style="display:inline-flex; align-items:center; margin-bottom:0;"><input type="radio" value="moq" v-model="quoteQtyLabel" style="margin-right:5px;">MOQ</label>
                 </div>
@@ -279,8 +315,8 @@
         <div class="preview-controls">
             <strong>👁️ 單據預覽</strong>
             <div class="scale-info">
-                縮放比例: {{ Math.round(previewScale * 100) }}% 
-                <span v-if="isMobile" style="color:#D08770; font-size:0.8rem;">(已自動適應螢幕)</span>
+                縮放: {{ Math.round(previewScale * 100) }}% 
+                <span v-if="isMobile" style="color:#D08770; font-size:0.8rem;">(自動適應)</span>
             </div>
         </div>
     </div>
@@ -370,7 +406,6 @@
                 buyer: { name: '', taxId: '', contact: '', phone: '' },
                 items: [], notes: '',
                 
-                // 預覽縮放相關
                 previewScale: 1,
                 isMobile: false,
                 containerHeight: 'auto'
@@ -399,16 +434,12 @@
                 const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
                 document.title = `${this.docNumber}${clientName}`;
             },
-            
-            // 自動計算縮放比例 (關鍵新功能)
             calculateScale() {
-                const containerWidth = window.innerWidth - 40; // 扣除邊距
+                const containerWidth = window.innerWidth - 30; 
                 const a4Width = 794;
-                
                 if (containerWidth < a4Width) {
                     this.isMobile = true;
                     this.previewScale = containerWidth / a4Width;
-                    // 計算縮放後的容器高度，避免下方留白太多
                     this.containerHeight = 1123 * this.previewScale + 40; 
                 } else {
                     this.isMobile = false;
@@ -416,7 +447,6 @@
                     this.containerHeight = 'auto';
                 }
             },
-
             switchDoc(type) { this.docType = type; this.generateDocNumber(); if (this.items.length === 0) this.initItems(); },
             generateDocNumber() {
                 const prefix = this.docType === 'quote' ? 'Q' : 'D';
@@ -429,7 +459,6 @@
             removeItem(index) { if (this.items.length > 1) this.items.splice(index, 1); else this.items[0] = { name: '', price: 0, quantity: 1, unit: '' }; },
             calculateRowTotal(item) { return Math.round((item.price || 0) * (item.quantity || 0)); },
             formatNumber(num) { return num ? num.toLocaleString('en-US') : '0'; },
-            
             saveSellerToLocal() { localStorage.setItem('creamApp_sellerDefault', JSON.stringify(this.seller)); alert('已儲存！'); },
             saveToLocal() { localStorage.setItem('creamApp_tempData', JSON.stringify({ seller: this.seller, buyer: this.buyer, items: this.items, notes: this.notes })); alert('暫存成功'); },
             loadDemoData() {
@@ -437,25 +466,16 @@
                 this.items = [{ name: '碧螺春', price: 1200, quantity: 20, unit: '台斤' }];
             },
             clearData() { if(confirm('清空？')) { this.initItems(); this.generateDocNumber(); } },
-
             printWindow() { window.print(); },
-            
             exportExcel() {
-                if (typeof XLSX === 'undefined') {
-                    alert("❌ 匯出失敗：無法載入 Excel 程式庫。");
-                    return;
-                }
+                if (typeof XLSX === 'undefined') { alert("❌ 無法載入 Excel 庫"); return; }
                 const infoData = [
                     ["單據類型", this.docTitle], ["單號", this.docNumber], ["日期", this.date],
-                    [], 
-                    ["賣方", this.seller.name], ["買方", this.buyer.name], 
-                    ["電話", this.seller.phone], ["電話", this.buyer.phone],
-                    [],
-                    ["總計", this.totals.total], ["備註", this.notes]
+                    [], ["賣方", this.seller.name], ["買方", this.buyer.name], ["電話", this.seller.phone], ["電話", this.buyer.phone],
+                    [], ["總計", this.totals.total], ["備註", this.notes]
                 ];
                 let qtyHeader = (this.docType === 'quote' && this.quoteQtyLabel === 'moq') ? 'MOQ 最低購買數量' : '數量';
                 let headers = this.docType === 'quote' ? ["品名", "批發價", qtyHeader, "單位", "小計"] : ["品名", "數量", "單價", "小計"];
-                
                 const itemRows = this.items.filter(i => i.name).map(i => {
                     const total = this.calculateRowTotal(i);
                     return this.docType === 'quote' ? [i.name, i.price, i.quantity, i.unit, total] : [i.name, i.quantity, i.price, total];
@@ -465,26 +485,13 @@
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headers, ...itemRows]), "明細");
                 XLSX.writeFile(wb, `${this.docNumber}.xlsx`);
             },
-            
-            loadFromLocal() {
-                const s = localStorage.getItem('creamApp_sellerDefault');
-                if (s) this.seller = JSON.parse(s);
-            }
+            loadFromLocal() { const s = localStorage.getItem('creamApp_sellerDefault'); if (s) this.seller = JSON.parse(s); }
         },
         mounted() { 
-            this.generateDocNumber(); 
-            this.initItems(); 
-            this.loadFromLocal(); 
-            this.updateTitle();
-            
-            // 啟動時計算縮放
-            this.calculateScale();
-            // 監聽視窗變動
-            window.addEventListener('resize', this.calculateScale);
+            this.generateDocNumber(); this.initItems(); this.loadFromLocal(); this.updateTitle();
+            this.calculateScale(); window.addEventListener('resize', this.calculateScale);
         },
-        unmounted() {
-            window.removeEventListener('resize', this.calculateScale);
-        }
+        unmounted() { window.removeEventListener('resize', this.calculateScale); }
     }).mount('#app');
 </script>
 </body>
