@@ -178,7 +178,7 @@
                 <div v-if="docType === 'quote'" style="background:#FFF8E1; padding:4px 12px; border-radius:20px; border:1px solid #FFE082; font-size:0.9rem;">
                     標題：
                     <label style="display:inline; margin:0 5px;"><input type="radio" value="qty" v-model="quoteQtyLabel">數量</label>
-                    <label style="display:inline;"><input type="radio" value="moq" v-model="quoteQtyLabel">MOQ</label>
+                    <label style="display:inline;"><input type="radio" value="moq" v-model="quoteQtyLabel">MOQ 最低購買數量</label>
                 </div>
             </div>
             
@@ -188,7 +188,7 @@
                         <th width="30"></th>
                         <th>品名</th>
                         <th width="100">{{ docType === 'quote' ? '批發價' : '單價' }}</th>
-                        <th width="80">{{ docType === 'quote' ? (quoteQtyLabel === 'moq'?'MOQ':'數量') : '數量' }}</th>
+                        <th width="120">{{ docType === 'quote' ? (quoteQtyLabel === 'moq'?'MOQ 最低購買數量':'數量') : '數量' }}</th>
                         <th width="60" v-if="docType==='quote'">單位</th>
                         <th width="100" class="text-right">小計</th>
                     </tr>
@@ -199,12 +199,21 @@
                         <td><input v-model="item.name"></td>
                         <td><input type="number" v-model.number="item.price"></td>
                         <td><input type="number" v-model.number="item.quantity"></td>
-                        <td v-if="docType==='quote'"><input v-model="item.unit"></td>
+                        <td v-if="docType==='quote'">
+                            <input v-model="item.unit" list="unit-options" placeholder="選/填">
+                        </td>
                         <td class="text-right" style="vertical-align:middle;">{{ formatNumber(calculateRowTotal(item)) }}</td>
                     </tr>
                 </tbody>
             </table>
             <button class="btn btn-outline" style="margin-top:10px; width:100%" @click="addItem">+ 新增品項</button>
+
+            <datalist id="unit-options">
+                <option value="盒"></option>
+                <option value="克"></option>
+                <option value="台斤"></option>
+                <option value="包"></option>
+            </datalist>
         </div>
 
         <div class="card">
@@ -262,7 +271,7 @@
                         <th width="5%">#</th>
                         <th>品名</th>
                         <th width="20%" class="text-right">{{ docType === 'quote' ? '批發價' : '單價' }}</th>
-                        <th width="15%" class="text-center">{{ docType === 'quote' ? (quoteQtyLabel === 'moq'?'MOQ':'數量') : '數量' }}</th>
+                        <th width="15%" class="text-center">{{ docType === 'quote' ? (quoteQtyLabel === 'moq'?'MOQ 最低購買數量':'數量') : '數量' }}</th>
                         <th width="10%" class="text-center" v-if="docType === 'quote'">單位</th>
                         <th width="20%" class="text-right">金額</th>
                     </tr>
@@ -311,9 +320,7 @@
                 docNumber: '',
                 date: new Date().toISOString().split('T')[0],
                 taxType: 'excluded', taxRate: 5, quoteQtyLabel: 'moq',
-                // 賣方預設谷芳茶業
                 seller: { name: '谷芳茶業有限公司', phone: '', address: '' },
-                // 買方加入 phone 欄位
                 buyer: { name: '', taxId: '', contact: '', phone: '' },
                 items: [], notes: '',
             }
@@ -350,7 +357,7 @@
             saveToLocal() { localStorage.setItem('creamApp_tempData', JSON.stringify({ seller: this.seller, buyer: this.buyer, items: this.items, notes: this.notes })); alert('暫存成功'); },
             loadDemoData() {
                 this.buyer = { name: '範例客戶', taxId: '12345678', contact: '陳先生', phone: '0912-345-678' };
-                this.items = [{ name: '碧螺春', price: 1200, quantity: 20, unit: '斤' }];
+                this.items = [{ name: '碧螺春', price: 1200, quantity: 20, unit: '台斤' }];
             },
             clearData() { if(confirm('清空？')) { this.initItems(); this.generateDocNumber(); } },
 
@@ -378,11 +385,12 @@
                     ["單據類型", this.docTitle], ["單號", this.docNumber], ["日期", this.date],
                     [], 
                     ["賣方", this.seller.name], ["買方", this.buyer.name], 
-                    ["電話", this.seller.phone], ["電話", this.buyer.phone], // Excel 增加電話
+                    ["電話", this.seller.phone], ["電話", this.buyer.phone],
                     [],
                     ["總計", this.totals.total], ["備註", this.notes]
                 ];
-                let qtyHeader = (this.docType === 'quote' && this.quoteQtyLabel === 'moq') ? 'MOQ' : '數量';
+                // 這裡也同步更新 Excel 標題
+                let qtyHeader = (this.docType === 'quote' && this.quoteQtyLabel === 'moq') ? 'MOQ 最低購買數量' : '數量';
                 let headers = this.docType === 'quote' ? ["品名", "批發價", qtyHeader, "單位", "小計"] : ["品名", "數量", "單價", "小計"];
                 
                 const itemRows = this.items.filter(i => i.name).map(i => {
