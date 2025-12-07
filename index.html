@@ -79,7 +79,6 @@
         .a4-preview-container {
             background: #555; padding: 40px; display: flex; justify-content: center; overflow-x: auto;
         }
-        /* 為了配合 html2pdf 下載，這裡指定像素寬度 (約等於 A4 96dpi) */
         .a4-page {
             background: white; width: 794px; min-height: 1123px; padding: 40px 60px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; box-sizing: border-box;
@@ -144,6 +143,7 @@
                     <div class="form-group"><input v-model="buyer.name" placeholder="客戶公司名稱"></div>
                     <div class="form-group"><input v-model="buyer.taxId" placeholder="統一編號"></div>
                     <div class="form-group"><input v-model="buyer.contact" placeholder="聯絡人"></div>
+                    <div class="form-group"><input v-model="buyer.phone" placeholder="聯絡電話"></div>
                 </div>
             </div>
             <hr style="border-top: 1px dashed #DDD; margin: 20px 0;">
@@ -252,6 +252,7 @@
                     <div class="info-row"><span class="info-label">公司：</span><span>{{ buyer.name }}</span></div>
                     <div class="info-row"><span class="info-label">統編：</span><span>{{ buyer.taxId }}</span></div>
                     <div class="info-row"><span class="info-label">聯絡：</span><span>{{ buyer.contact }}</span></div>
+                    <div class="info-row"><span class="info-label">電話：</span><span>{{ buyer.phone }}</span></div>
                 </div>
             </div>
 
@@ -310,9 +311,10 @@
                 docNumber: '',
                 date: new Date().toISOString().split('T')[0],
                 taxType: 'excluded', taxRate: 5, quoteQtyLabel: 'moq',
-                // 預設填入：谷芳茶業有限公司
+                // 賣方預設谷芳茶業
                 seller: { name: '谷芳茶業有限公司', phone: '', address: '' },
-                buyer: { name: '', taxId: '', contact: '' },
+                // 買方加入 phone 欄位
+                buyer: { name: '', taxId: '', contact: '', phone: '' },
                 items: [], notes: '',
             }
         },
@@ -347,15 +349,13 @@
             saveSellerToLocal() { localStorage.setItem('creamApp_sellerDefault', JSON.stringify(this.seller)); alert('已儲存！'); },
             saveToLocal() { localStorage.setItem('creamApp_tempData', JSON.stringify({ seller: this.seller, buyer: this.buyer, items: this.items, notes: this.notes })); alert('暫存成功'); },
             loadDemoData() {
-                // 這裡只載入買方範例，不覆蓋賣方
-                this.buyer = { name: '範例客戶', taxId: '12345678', contact: '陳先生' };
+                this.buyer = { name: '範例客戶', taxId: '12345678', contact: '陳先生', phone: '0912-345-678' };
                 this.items = [{ name: '碧螺春', price: 1200, quantity: 20, unit: '斤' }];
             },
             clearData() { if(confirm('清空？')) { this.initItems(); this.generateDocNumber(); } },
 
             printWindow() { window.print(); },
 
-            // 新增：直接下載 PDF 功能 (因為你在 GitHub 上，這是安全的)
             downloadPDF() {
                 const element = document.getElementById('pdf-content');
                 const opt = {
@@ -376,7 +376,10 @@
                 
                 const infoData = [
                     ["單據類型", this.docTitle], ["單號", this.docNumber], ["日期", this.date],
-                    [], ["賣方", this.seller.name], ["買方", this.buyer.name], [],
+                    [], 
+                    ["賣方", this.seller.name], ["買方", this.buyer.name], 
+                    ["電話", this.seller.phone], ["電話", this.buyer.phone], // Excel 增加電話
+                    [],
                     ["總計", this.totals.total], ["備註", this.notes]
                 ];
                 let qtyHeader = (this.docType === 'quote' && this.quoteQtyLabel === 'moq') ? 'MOQ' : '數量';
