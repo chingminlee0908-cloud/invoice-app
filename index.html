@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
-        /* --- 1. 核心變數：溫暖奶油風 + 玻璃感 --- */
+        /* --- 1. 核心變數 --- */
         :root {
             --primary-accent: #EBCB8B;   /* 溫暖黃 */
             --secondary-accent: #D08770; /* 磚橘紅 */
@@ -21,7 +21,6 @@
             --glass-shadow: 0 8px 32px 0 rgba(174, 159, 130, 0.15); 
         }
 
-        /* 防止 Vue 載入前的畫面閃爍 */
         [v-cloak] { display: none !important; }
 
         body {
@@ -34,9 +33,9 @@
             touch-action: manipulation;
         }
 
-        .container { max-width: 900px; margin: 0 auto; padding-bottom: 80px; }
+        .container { max-width: 950px; margin: 0 auto; padding-bottom: 80px; }
 
-        /* --- 讀取遮罩 (PDF生成時顯示) --- */
+        /* --- Loading --- */
         .loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.85); z-index: 2000;
@@ -49,13 +48,13 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- 狀態提示條 --- */
+        /* --- Status Bar --- */
         .status-bar { position: fixed; top: 0; left: 0; width: 100%; height: 3px; z-index: 999; background: transparent; }
         .status-bar.saving { background: var(--secondary-accent); animation: pulse 1s infinite; }
         .status-bar.saved { background: var(--success-color); transition: background 0.5s; }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-        /* --- 玻璃卡片 --- */
+        /* --- Glass Card --- */
         .glass-card {
             background: var(--glass-bg);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -65,115 +64,125 @@
         }
         @media (max-width: 768px) { .glass-card { padding: 15px; border-radius: 15px; margin-bottom: 15px; } body { padding: 10px; } }
 
-        h1 { font-size: 1.6rem; text-align: center; margin: 10px 0 5px; color: #8D6E63; font-weight: 800; }
+        h1 { font-size: 1.6rem; text-align: center; margin: 0 0 5px; color: #8D6E63; font-weight: 800; }
         h3 { font-size: 1.2rem; color: #5D4037; margin: 0 0 15px; border-left: 5px solid var(--secondary-accent); padding-left: 10px; display: flex; align-items: center; justify-content: space-between; }
 
-        /* --- 操作元件 --- */
-        .header-controls { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 15px; position: relative; }
-        .sync-text { text-align: center; font-size: 0.8rem; color: #888; margin-bottom: 5px; display: block; }
+        /* --- 修正後的 Header 排版 (解決重疊問題) --- */
+        .header-controls { 
+            display: flex; 
+            flex-direction: column; /* 手機版垂直排列 */
+            gap: 15px; 
+            align-items: center; 
+            margin-bottom: 20px; 
+        }
         
-        .tabs { display: flex; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 50px; width: 100%; max-width: 320px; border: 1px solid rgba(255,255,255,0.6); }
+        .title-group { text-align: center; }
+        .sync-text { font-size: 0.8rem; color: #888; display: block; margin-top: 2px; }
+        
+        /* 分頁按鈕 */
+        .tabs { 
+            display: flex; 
+            background: rgba(255,255,255,0.5); 
+            padding: 4px; 
+            border-radius: 50px; 
+            width: 100%; max-width: 320px; 
+            border: 1px solid rgba(255,255,255,0.6); 
+        }
         .tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; border-radius: 40px; font-weight: bold; color: #888; transition: 0.3s; font-size: 1rem; }
         .tab-btn.active { background: #FFF; color: var(--secondary-accent); box-shadow: 0 2px 8px rgba(208, 135, 112, 0.2); }
 
-        @media (min-width: 768px) {
-            .header-controls { flex-direction: row; justify-content: space-between; align-items: flex-end;}
-            h1 { text-align: left; margin: 0; }
-            .tabs { width: auto; min-width: 240px; }
-            .sync-text { text-align: left; margin-bottom: 0; }
-        }
-
-        /* --- 設定按鈕與視窗 --- */
+        /* 設定按鈕 (移除 absolute，加入流式排版) */
         .settings-btn { 
-            position: absolute; top: 0; right: 0; 
-            background: rgba(255,255,255,0.8); border: 1px solid #CCC; 
-            border-radius: 20px; padding: 5px 12px; font-size: 0.9rem; cursor: pointer; 
-            display: flex; align-items: center; gap: 5px; color: #555;
+            background: rgba(255,255,255,0.8); 
+            border: 1px solid #CCC; 
+            border-radius: 20px; 
+            padding: 8px 16px; 
+            font-size: 0.9rem; 
+            cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; gap: 5px; color: #555;
+            width: 100%; /* 手機版滿寬 */
+            max-width: 320px;
         }
-        @media (max-width: 768px) { .settings-btn { position: relative; margin-bottom: 10px; width: 100%; justify-content: center; } }
 
-        /* Modal 通用樣式 */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.4); z-index: 1000;
-            display: flex; justify-content: center; align-items: center; padding: 20px;
+        /* 電腦版樣式 (橫向排列：標題...分頁...設定) */
+        @media (min-width: 768px) {
+            .header-controls { 
+                flex-direction: row; 
+                justify-content: space-between; 
+                align-items: flex-end; /* 底部對齊 */
+            }
+            .title-group { text-align: left; margin-bottom: 0; }
+            .sync-text { text-align: left; }
+            
+            /* 利用 order 控制順序 */
+            .tabs { 
+                width: auto; 
+                min-width: 240px; 
+                margin-left: auto; /* 將分頁按鈕推向右邊 */
+                margin-right: 10px; /* 與設定按鈕的間距 */
+            }
+            .settings-btn { 
+                width: auto; /* 電腦版自動寬度 */
+                margin-bottom: 0;
+            }
         }
-        .modal-content {
-            width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto;
-            animation: slideUp 0.3s ease; position: relative; display: flex; flex-direction: column;
-        }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease; position: relative; display: flex; flex-direction: column; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        /* 選擇器樣式 */
+        /* Picker */
         .picker-container { display: flex; height: 300px; border: 1px solid #DDD; border-radius: 10px; overflow: hidden; }
         .picker-col { flex: 1; overflow-y: auto; padding: 10px; }
         .picker-col.left { background: rgba(235, 203, 139, 0.2); border-right: 1px solid #DDD; flex: 0 0 35%; }
         .picker-col.right { background: #FFF; }
-        
-        .picker-item { 
-            padding: 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; transition: 0.2s; color: #555;
-        }
+        .picker-item { padding: 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; transition: 0.2s; color: #555; }
         .picker-item:hover { background: rgba(0,0,0,0.05); }
         .picker-item.active { background: var(--secondary-accent); color: white; font-weight: bold; }
 
-        /* 設定標籤樣式 */
+        /* Tags */
         .category-block { margin-bottom: 15px; border: 1px solid #EEE; padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.5); }
         .category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold; color: #5D4037; }
         .tag-container { display: flex; flex-wrap: wrap; gap: 8px; }
-        .tag-pill { 
-            background: #FFF; border: 1px solid #EBCB8B; border-radius: 15px; padding: 5px 10px; 
-            font-size: 0.9rem; display: flex; align-items: center; gap: 6px; color: #5D4037;
-        }
+        .tag-pill { background: #FFF; border: 1px solid #EBCB8B; border-radius: 15px; padding: 5px 10px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; color: #5D4037; }
         .tag-delete { cursor: pointer; color: #D08770; font-weight: bold; }
-        .tag-delete:hover { color: red; }
 
-        /* --- 表單通用 --- */
+        /* Form & Table */
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; gap: 25px; } }
         .form-group { margin-bottom: 12px; }
         label { display: block; margin-bottom: 6px; font-size: 0.95rem; color: #6D4C41; font-weight: bold; }
-        
-        input, textarea, select {
-            width: 100%; padding: 12px; border: 1px solid rgba(235, 203, 139, 0.5);
-            border-radius: 12px; font-size: 16px; background: rgba(255, 255, 255, 0.7); 
-            box-sizing: border-box; appearance: none; transition: 0.3s;
-        }
-        input:focus, textarea:focus, select:focus { 
-            outline: none; background: #FFF; border-color: var(--secondary-accent); 
-            box-shadow: 0 0 0 3px rgba(208, 135, 112, 0.2);
-        }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid rgba(235, 203, 139, 0.5); border-radius: 12px; font-size: 16px; background: rgba(255, 255, 255, 0.7); box-sizing: border-box; appearance: none; transition: 0.3s; }
+        input:focus, textarea:focus, select:focus { outline: none; background: #FFF; border-color: var(--secondary-accent); box-shadow: 0 0 0 3px rgba(208, 135, 112, 0.2); }
 
-        /* --- 表格與按鈕 --- */
         .table-wrapper { width: 100%; overflow-x: auto; margin-bottom: 15px; border-radius: 12px; background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.5); }
         .table-editor { width: 100%; border-collapse: collapse; min-width: 600px; }
         .table-editor th { text-align: left; padding: 10px; color: #5D4037; font-size: 0.9rem; background: rgba(235, 203, 139, 0.3); white-space: nowrap; }
         .table-editor td { padding: 8px; vertical-align: middle; }
-        
         .btn-icon { background: #FFF; border: 1px solid #FFCDCD; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: #D32F2F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s;}
         .btn-icon:hover { transform: scale(1.1); }
         .btn-search { color: #5D4037; border-color: #EBCB8B; margin-left: 5px; }
 
+        /* Buttons */
         .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
         @media (min-width: 768px) { .btn-group { flex-direction: row; } }
-        
-        .btn { padding: 12px 24px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-shadow: 0 4px 6px rgba(174, 159, 130, 0.2); }
+        .btn { padding: 12px 24px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-shadow: 0 4px 6px rgba(174, 159, 130, 0.2); transition: 0.2s; }
         .btn:active { transform: scale(0.98); }
         @media (min-width: 768px) { .btn { width: auto; flex: 1; } }
-        
         .btn-primary { background: var(--secondary-accent); color: white; }
         .btn-success { background: #689F38; color: white; }
-        .btn-share { background: #40C4FF; color: white; }
+        .btn-share { background: linear-gradient(90deg, #40C4FF 0%, #06C755 100%); color: white; }
         .btn-secondary { background: var(--primary-accent); color: #5D4037; }
-        .btn-outline { background: rgba(255,255,255,0.8); border: 1px solid #CCC; color: #666; }
         .btn-danger { background: #fff1f0; border: 1px solid #ffa39e; color: #cf1322; }
         .btn-sm { padding: 5px 12px; font-size: 0.85rem; border-radius: 20px; border: 1px solid #CCC; background: rgba(255,255,255,0.8); cursor: pointer; color: #555; white-space: nowrap; }
 
-        /* --- 預覽與 A4 --- */
+        /* Preview */
         .preview-controls { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.6); padding: 10px 20px; border-radius: 50px; margin: 20px auto 10px; width: fit-content; min-width: 200px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.5); }
         .a4-preview-container { background: transparent; padding: 0; display: block; text-align: center; overflow-x: hidden; border-radius: 12px; margin-top: 10px; position: relative; }
         .a4-page { background: white; width: 794px; min-height: 1123px; height: auto; padding: 50px 60px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: inline-block; text-align: left; box-sizing: border-box; font-family: "Microsoft JhengHei", serif; transform-origin: top center; transition: transform 0.3s ease; }
 
-        /* --- 列印內部樣式 --- */
+        /* Print Layout */
         .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 30px; }
         .doc-title { font-size: 24pt; font-weight: bold; color: #000; }
         .doc-meta { text-align: right; font-size: 10pt; line-height: 1.5; }
@@ -196,11 +205,11 @@
         .sign-box { width: 40%; border-top: 1px solid #000; padding-top: 10px; }
 
         @media print {
-            @page { size: A4; margin: 15mm; }
-            body { background: white; margin: 0; padding: 0; }
+            @page { size: A4; margin: 0mm; }
+            body { background: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print, .header-controls, .glass-card, .btn-group, .preview-controls, .status-bar, .settings-btn, .loading-overlay { display: none !important; }
             .a4-preview-container { background: white; padding: 0; margin: 0; border: none; display: block; width: 100%; height: auto !important; overflow: visible; }
-            .a4-page { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; transform: none !important; border: none; }
+            .a4-page { width: 100% !important; margin: 0 !important; padding: 15mm 15mm !important; box-shadow: none !important; transform: none !important; border: none; }
             thead { display: table-header-group; }
             tr, .bottom-section, .signature-section { page-break-inside: avoid; break-inside: avoid; }
         }
@@ -218,7 +227,7 @@
 
     <div class="container no-print">
         <div class="header-controls">
-            <div>
+            <div class="title-group">
                 <h1>🍵 谷芳茶業有限公司</h1>
                 <span class="sync-text">
                     <span v-if="saveStatus === 'saved'">☁️ 已同步儲存</span>
@@ -227,12 +236,12 @@
                 </span>
             </div>
             
-            <button class="settings-btn" @click="openSettings">⚙️ 選項與備份</button>
-
             <div class="tabs">
                 <button class="tab-btn" :class="{ active: docType === 'quote' }" @click="switchDoc('quote')">報價單</button>
                 <button class="tab-btn" :class="{ active: docType === 'delivery' }" @click="switchDoc('delivery')">出貨單</button>
             </div>
+
+            <button class="settings-btn" @click="openSettings">⚙️ 選項與備份</button>
         </div>
 
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
@@ -421,7 +430,7 @@
             
             <div class="btn-group">
                 <button class="btn btn-danger" @click="clearData">🗑️ 全部清空</button>
-                <button class="btn btn-share" @click="sharePdf">📤 生成 PDF 並分享 (Line/Mail)</button>
+                <button class="btn btn-share" @click="sharePdf">📤 分享 (Line / Gmail)</button>
                 <button class="btn btn-success" @click="exportExcel">📊 匯出 Excel</button>
                 <button class="btn btn-primary" @click="printWindow">🖨️ 列印 / 電腦存檔</button>
             </div>
@@ -565,36 +574,34 @@
             // --- 分享與 PDF 生成核心功能 ---
             sharePdf() {
                 this.isLoading = true;
-                this.loadingText = '正在生成 PDF...';
+                this.loadingText = '正在生成 PDF 並喚起分享...';
                 
                 const element = document.getElementById('print-area');
                 const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
                 const fileName = `${this.docNumber}${clientName}.pdf`;
 
-                // 設定 html2pdf 參數
                 const opt = {
                     margin: 0,
                     filename: fileName,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true }, // scale:2 讓字體更清晰
+                    html2canvas: { scale: 2, useCORS: true }, 
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                // 生成 PDF Blob
                 html2pdf().set(opt).from(element).output('blob').then((blob) => {
                     this.isLoading = false;
                     const file = new File([blob], fileName, { type: 'application/pdf' });
 
-                    // 檢查是否支援 Web Share API (通常手機支援)
                     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                         navigator.share({
                             files: [file],
                             title: fileName,
-                            text: '請查收您的單據 PDF。'
-                        }).then(() => console.log('分享成功')).catch((error) => console.log('分享取消或失敗', error));
+                            text: '您的單據如附件，請查收。'
+                        })
+                        .then(() => console.log('分享成功'))
+                        .catch((error) => console.log('使用者取消分享或失敗', error));
                     } else {
-                        // 如果是電腦版或不支援分享，則自動下載
-                        alert('您的瀏覽器不支援直接分享檔案 (通常只在手機上可用)。\n\n系統將自動下載 PDF，請您手動傳送。');
+                        alert('📢 電腦版提示：\n\n網頁技術限制無法直接呼叫 Line/Gmail 電腦版。\n\n系統將自動下載 PDF 檔案，請您打開 Line 或 Gmail，將下載的檔案「拖曳」進去即可傳送。');
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
@@ -785,20 +792,27 @@
             printWindow() { window.print(); },
             exportExcel() {
                 if (typeof XLSX === 'undefined') { alert("❌ 無法載入 Excel 庫"); return; }
-                const infoData = [
-                    ["單據類型", this.docTitle], ["單號", this.docNumber], ["日期", this.date],
-                    [], ["賣方", this.seller.name], ["買方", this.buyer.name], ["電話", this.seller.phone], ["電話", this.buyer.phone],
-                    [], ["總計", this.totals.total], ["備註", this.notes]
+                const qtyHeader = (this.docType === 'quote' && this.quoteQtyLabel === 'moq') ? 'MOQ' : '數量';
+                let ws_data = [
+                    [this.seller.name], [this.docTitle], ["單號:", this.docNumber, "", "日期:", this.date], [],
+                    ["【賣方資料】", "", "", "【買方資料】", ""],
+                    ["公司:", this.seller.name, "", "公司:", this.buyer.name],
+                    ["電話:", this.seller.phone, "", "統編:", this.buyer.taxId],
+                    ["地址:", this.seller.address, "", "聯絡人:", this.buyer.contact],
+                    ["", "", "", "電話:", this.buyer.phone], [],
+                    ["品名", "單價/批發價", qtyHeader, "單位", "金額"]
                 ];
-                let qtyHeader = (this.docType === 'quote' && this.quoteQtyLabel === 'moq') ? 'MOQ 最低購買數量' : '數量';
-                let headers = this.docType === 'quote' ? ["品名", "批發價", qtyHeader, "單位", "小計"] : ["品名", "數量", "單價", "小計"];
-                const itemRows = this.items.filter(i => i.name).map(i => {
-                    const total = this.calculateRowTotal(i);
-                    return this.docType === 'quote' ? [i.name, i.price, i.quantity, i.unit, total] : [i.name, i.quantity, i.price, total];
+                this.items.filter(i => i.name).forEach(i => {
+                    ws_data.push([i.name, i.price, i.quantity, i.unit || '-', this.calculateRowTotal(i)]);
                 });
+                ws_data.push([], ["", "", "", "未稅:", this.totals.subtotal]);
+                ws_data.push(["", "", "", `稅額 (${this.taxRate}%):`, this.totals.tax]);
+                ws_data.push(["", "", "", "總計:", this.totals.total]);
+                ws_data.push([], ["備註:", this.notes]);
+                const ws = XLSX.utils.aoa_to_sheet(ws_data);
+                ws['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }];
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infoData), "資訊");
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headers, ...itemRows]), "明細");
+                XLSX.utils.book_append_sheet(wb, ws, "單據內容");
                 XLSX.writeFile(wb, `${this.docNumber}.xlsx`);
             }
         },
