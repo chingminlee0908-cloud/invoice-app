@@ -12,7 +12,7 @@
         font-src 'self' data:; 
         connect-src 'self';">
     
-    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Fixed)</title>
+    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Filename Fixed)</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -115,7 +115,20 @@
         /* --- Preview & A4 --- */
         .preview-controls { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.8); padding: 8px 15px; border-radius: 50px; margin: 20px auto 10px; width: 90%; max-width: 300px; border: 1px solid #DDD; }
         .a4-preview-container { width: 100%; overflow-x: auto; background: transparent; padding: 10px 0; display: flex; justify-content: center; min-height: 500px; }
-        .a4-page { background: white; width: 794px; min-height: 1123px; padding: 40px 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); text-align: left; transform-origin: top center; transition: transform 0.3s ease; margin: 0 auto; flex-shrink: 0; position: relative; }
+        .a4-page { 
+            background: white; 
+            width: 794px; /* A4 寬度 */
+            min-height: 1123px; /* A4 高度 */
+            padding: 40px 50px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15); 
+            text-align: left; 
+            transform-origin: top center; 
+            transition: transform 0.3s ease; 
+            margin: 0 auto; 
+            flex-shrink: 0; 
+            position: relative; 
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+        }
 
         /* --- Print Layout --- */
         .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 30px; }
@@ -520,9 +533,17 @@
             },
             updateTitle() { document.title = `${this.docNumber}_${this.buyer.name || ''}`; },
             
+            // --- 修正：Print Window 確保檔名正確 ---
+            printWindow() {
+                const clientSuffix = this.buyer.name ? `_${this.buyer.name}` : '';
+                document.title = `${this.docNumber}${clientSuffix}`; 
+                window.print();
+            },
+
+            // --- 核心修正：分享與 PDF 生成功能 ---
             async sharePdf() {
                 this.isLoading = true;
-                this.loadingText = '正在處理排版並生成 PDF...';
+                this.loadingText = '正在排版並生成高清 PDF...';
 
                 // 1. 取得目標元素
                 const element = document.getElementById('print-area');
@@ -531,11 +552,11 @@
                 const originalTransform = element.style.transform;
                 const originalMargin = element.style.margin;
 
-                // 3. 強制還原成 100% 大小，以確保 html2canvas 抓取正確
+                // 3. 強制還原成 100% 大小
                 element.style.transform = 'scale(1)';
                 element.style.margin = '0 auto';
                 
-                // 等待 Vue DOM 更新
+                // 等待 Vue DOM 更新樣式
                 await this.$nextTick(); 
 
                 const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
@@ -573,18 +594,20 @@
                             text: '您的單據如附件。'
                         });
                     } else {
-                        // 電腦版不支援，改為下載並提示
+                        // 【關鍵修正】電腦版強制下載
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
+                        a.style.display = 'none'; // 隱藏元素
                         a.href = url;
                         a.download = fileName;
+                        document.body.appendChild(a); // 必須加入 DOM 才能被點擊
                         a.click();
+                        document.body.removeChild(a); // 點擊後移除
                         URL.revokeObjectURL(url);
-                        alert('💻 電腦版/不支援分享的環境：\n\nPDF 已自動下載。\n請打開 Line 或 Email，將檔案「拖曳」進去發送。');
+                        alert('💻 電腦版提示：\n\nPDF 已自動下載。\n請手動打開 Line 或 Email，將下載的檔案「拖曳」進去發送。');
                     }
                 } catch (err) {
                     console.error(err);
-                    // 發生錯誤也要恢復樣式
                     element.style.transform = originalTransform;
                     element.style.margin = originalMargin;
                     this.isLoading = false;
@@ -687,7 +710,6 @@
             saveSellerToLocal() { localStorage.setItem('creamApp_sellerDefault', JSON.stringify(this.seller)); alert('✅ 已設定預設'); },
             saveNotesToDefault() { localStorage.setItem('creamApp_notesDefault', this.notes); alert('✅ 已設定預設'); },
             clearData() { if(confirm('清空欄位？')) { this.initItems(); this.generateDocNumber(); this.buyer = { name: '', taxId: '', contact: '', phone: '' }; this.notes = localStorage.getItem('creamApp_notesDefault') || ''; } },
-            printWindow() { window.print(); },
             exportExcel() {
                 if (typeof XLSX === 'undefined') { alert("❌ 無法載入 Excel"); return; }
                 const qtyHeader = (this.quoteQtyLabel === 'moq') ? 'MOQ (最低量)' : '數量';
