@@ -12,7 +12,7 @@
         font-src 'self' data:; 
         connect-src 'self';">
     
-    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Filename Fixed)</title>
+    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Mobile Fix)</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -533,30 +533,19 @@
             },
             updateTitle() { document.title = `${this.docNumber}_${this.buyer.name || ''}`; },
             
-            // --- 修正：Print Window 確保檔名正確 ---
-            printWindow() {
-                const clientSuffix = this.buyer.name ? `_${this.buyer.name}` : '';
-                document.title = `${this.docNumber}${clientSuffix}`; 
-                window.print();
-            },
-
             // --- 核心修正：分享與 PDF 生成功能 ---
             async sharePdf() {
                 this.isLoading = true;
                 this.loadingText = '正在排版並生成高清 PDF...';
 
-                // 1. 取得目標元素
                 const element = document.getElementById('print-area');
-
-                // 2. 暫存原始樣式 (scale)
                 const originalTransform = element.style.transform;
                 const originalMargin = element.style.margin;
 
-                // 3. 強制還原成 100% 大小
+                // 強制還原成 100% 大小，解決手機跑版問題
                 element.style.transform = 'scale(1)';
                 element.style.margin = '0 auto';
                 
-                // 等待 Vue DOM 更新樣式
                 await this.$nextTick(); 
 
                 const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
@@ -580,29 +569,27 @@
                     const blob = await html2pdf().set(opt).from(element).output('blob');
                     const file = new File([blob], fileName, { type: 'application/pdf' });
 
-                    // 4. 恢復原始縮放樣式
                     element.style.transform = originalTransform;
                     element.style.margin = originalMargin;
                     this.isLoading = false;
 
-                    // 5. 分享邏輯判定
                     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                        // 手機/平板支援原生分享
+                        // 手機版原生分享
                         await navigator.share({
                             files: [file],
                             title: fileName,
                             text: '您的單據如附件。'
                         });
                     } else {
-                        // 【關鍵修正】電腦版強制下載
+                        // 【電腦版修正】強制加入 DOM 觸發下載
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
-                        a.style.display = 'none'; // 隱藏元素
+                        a.style.display = 'none';
                         a.href = url;
                         a.download = fileName;
-                        document.body.appendChild(a); // 必須加入 DOM 才能被點擊
+                        document.body.appendChild(a); // 關鍵：加入 DOM
                         a.click();
-                        document.body.removeChild(a); // 點擊後移除
+                        document.body.removeChild(a); // 移除
                         URL.revokeObjectURL(url);
                         alert('💻 電腦版提示：\n\nPDF 已自動下載。\n請手動打開 Line 或 Email，將下載的檔案「拖曳」進去發送。');
                     }
@@ -613,6 +600,13 @@
                     this.isLoading = false;
                     alert('生成失敗，請重試');
                 }
+            },
+
+            // --- 修正：Print Window 確保檔名正確 ---
+            printWindow() {
+                const clientSuffix = this.buyer.name ? `_${this.buyer.name}` : '';
+                document.title = `${this.docNumber}${clientSuffix}`; 
+                window.print();
             },
 
             openSettings() { this.showSettings = true; },
