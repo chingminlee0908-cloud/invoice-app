@@ -12,7 +12,7 @@
         font-src 'self' data:; 
         connect-src 'self';">
     
-    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Sync Edition)</title>
+    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Fixed)</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -136,37 +136,10 @@
         .total-row { display: flex; justify-content: space-between; padding: 5px 0; }
         .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 13pt; margin-top: 8px; padding-top: 8px; }
         
-        /* --- 簽署區塊優化 --- */
-        .signature-section { 
-            margin-top: 60px; 
-            display: flex; 
-            justify-content: space-between; 
-            page-break-inside: avoid; 
-            position: relative; 
-            gap: 20px; 
-        }
-        .sign-box { 
-            flex: 1; 
-            border: 2px solid #333; 
-            border-radius: 4px; 
-            padding: 10px; 
-            position: relative; 
-            min-height: 150px; 
-            display: flex;
-            flex-direction: column;
-            align-items: center; 
-        }
-        .stamp-img {
-            position: absolute;
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%) rotate(-3deg); 
-            width: 100px; height: 100px;
-            object-fit: contain;
-            opacity: 0.9;
-            mix-blend-mode: multiply; 
-            pointer-events: none;
-            z-index: 1;
-        }
+        /* --- 簽署區塊 --- */
+        .signature-section { margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid; position: relative; gap: 20px; }
+        .sign-box { flex: 1; border: 2px solid #333; border-radius: 4px; padding: 10px; position: relative; min-height: 150px; display: flex; flex-direction: column; align-items: center; }
+        .stamp-img { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-3deg); width: 100px; height: 100px; object-fit: contain; opacity: 0.9; mix-blend-mode: multiply; pointer-events: none; z-index: 1; }
 
         @media print {
             @page { size: A4; margin: 0; }
@@ -187,6 +160,16 @@
         .tag-container { display: flex; flex-wrap: wrap; gap: 8px; }
         .tag-pill { background: #FFF; border: 1px solid #EBCB8B; border-radius: 15px; padding: 6px 12px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
         .tag-delete { cursor: pointer; color: #D08770; font-weight: bold; }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9); z-index: 2000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .spinner { width: 40px; height: 40px; border: 4px solid #EBCB8B; border-top: 4px solid #D08770; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -365,7 +348,6 @@
                 </table>
             </div>
             <button class="btn btn-secondary" @click="addItem">+ 新增品項</button>
-            
             <datalist id="unit-options">
                 <option v-for="u in savedUnits" :value="u"></option>
             </datalist>
@@ -472,7 +454,7 @@
         data() {
             return {
                 docType: 'quote', docNumber: '', date: new Date().toISOString().split('T')[0],
-                taxType: 'excluded', taxRate: 5, quoteQtyLabel: 'qty', // 預設一般數量模式
+                taxType: 'excluded', taxRate: 5, quoteQtyLabel: 'qty',
                 seller: { name: '谷芳茶業有限公司', phone: '', address: '' },
                 buyer: { name: '', taxId: '', contact: '', phone: '' },
                 items: [], notes: '',
@@ -481,22 +463,20 @@
                 isLoading: false, loadingText: '',
                 
                 showSettings: false, categoryData: [], newCategoryName: '', 
-                savedUnits: [], // 單位清單
-                newUnitInput: '', // 新增單位輸入框
+                savedUnits: [], newUnitInput: '',
                 
                 showPicker: false, pickerEditingIndex: null, pickerSelectedCatIndex: 0,
                 sellerStamp: null, buyerStamp: null
             }
         },
         watch: {
-            // 3. 跨分頁即時同步監聽 (需配合 storage event)
             docNumber() { this.triggerAutoSave(); this.updateTitle(); },
             date() { this.triggerAutoSave(); },
             'buyer.name'() { this.triggerAutoSave(); this.updateTitle(); },
             'seller': { handler() { this.triggerAutoSave(); }, deep: true },
             items: { handler() { this.triggerAutoSave(); this.$nextTick(() => this.calculateScale()); }, deep: true },
             notes() { this.triggerAutoSave(); },
-            quoteQtyLabel() { this.triggerAutoSave(); }, // 監聽模式切換
+            quoteQtyLabel() { this.triggerAutoSave(); },
             savedUnits: { handler() { localStorage.setItem('creamApp_units', JSON.stringify(this.savedUnits)); }, deep: true },
             sellerStamp() { localStorage.setItem('creamApp_sellerStamp', this.sellerStamp || ''); },
             buyerStamp() { localStorage.setItem('creamApp_buyerStamp', this.buyerStamp || ''); }
@@ -516,13 +496,9 @@
             }
         },
         methods: {
-            // 3. 跨分頁同步邏輯：當其他分頁修改 localStorage 時觸發
             syncFromStorage(event) {
-                if (event.key === 'creamApp_autoSave') {
-                    this.loadAutoSave();
-                } else if (event.key === 'creamApp_units') {
-                    this.savedUnits = JSON.parse(event.newValue);
-                }
+                if (event.key === 'creamApp_autoSave') { this.loadAutoSave(); } 
+                else if (event.key === 'creamApp_units') { this.savedUnits = JSON.parse(event.newValue); }
             },
             
             handleStampUpload(event, type) {
@@ -543,39 +519,88 @@
                 }
             },
             updateTitle() { document.title = `${this.docNumber}_${this.buyer.name || ''}`; },
-            sharePdf() {
-                this.isLoading = true; this.loadingText = '生成 PDF...';
+            
+            async sharePdf() {
+                this.isLoading = true;
+                this.loadingText = '正在處理排版並生成 PDF...';
+
+                // 1. 取得目標元素
                 const element = document.getElementById('print-area');
-                const fileName = `${this.docNumber}_${this.buyer.name || ''}.pdf`;
-                const opt = { margin: 0, filename: fileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-                html2pdf().set(opt).from(element).output('blob').then((blob) => {
-                    this.isLoading = false;
+
+                // 2. 暫存原始樣式 (scale)
+                const originalTransform = element.style.transform;
+                const originalMargin = element.style.margin;
+
+                // 3. 強制還原成 100% 大小，以確保 html2canvas 抓取正確
+                element.style.transform = 'scale(1)';
+                element.style.margin = '0 auto';
+                
+                // 等待 Vue DOM 更新
+                await this.$nextTick(); 
+
+                const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
+                const fileName = `${this.docNumber}${clientName}.pdf`;
+
+                const opt = {
+                    margin: 0,
+                    filename: fileName,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { 
+                        scale: 2, 
+                        useCORS: true, 
+                        scrollY: 0,
+                        windowWidth: 794, 
+                        windowHeight: 1123 
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                try {
+                    const blob = await html2pdf().set(opt).from(element).output('blob');
                     const file = new File([blob], fileName, { type: 'application/pdf' });
-                    if (navigator.share && navigator.canShare({ files: [file] })) {
-                        navigator.share({ files: [file], title: fileName, text: '單據附件' }).catch(console.error);
+
+                    // 4. 恢復原始縮放樣式
+                    element.style.transform = originalTransform;
+                    element.style.margin = originalMargin;
+                    this.isLoading = false;
+
+                    // 5. 分享邏輯判定
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        // 手機/平板支援原生分享
+                        await navigator.share({
+                            files: [file],
+                            title: fileName,
+                            text: '您的單據如附件。'
+                        });
                     } else {
-                        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName; a.click(); URL.revokeObjectURL(url);
+                        // 電腦版不支援，改為下載並提示
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        alert('💻 電腦版/不支援分享的環境：\n\nPDF 已自動下載。\n請打開 Line 或 Email，將檔案「拖曳」進去發送。');
                     }
-                }).catch(() => { this.isLoading = false; alert('失敗'); });
+                } catch (err) {
+                    console.error(err);
+                    // 發生錯誤也要恢復樣式
+                    element.style.transform = originalTransform;
+                    element.style.margin = originalMargin;
+                    this.isLoading = false;
+                    alert('生成失敗，請重試');
+                }
             },
+
             openSettings() { this.showSettings = true; },
             addCategory() { if (this.newCategoryName.trim()) { this.categoryData.push({ name: this.newCategoryName.trim(), items: [], newItemInput: '' }); this.newCategoryName = ''; } },
             removeCategory(idx) { if (confirm('刪除此分類？')) this.categoryData.splice(idx, 1); },
             addItemToCat(catIdx) { const cat = this.categoryData[catIdx]; if (cat.newItemInput.trim()) { cat.items.push(cat.newItemInput.trim()); cat.newItemInput = ''; } },
             removeItemFromCat(catIdx, itemIdx) { this.categoryData[catIdx].items.splice(itemIdx, 1); },
-            
-            // 1. 單位管理邏輯 (增刪)
-            addUnit() { 
-                if(this.newUnitInput && !this.savedUnits.includes(this.newUnitInput)) { 
-                    this.savedUnits.push(this.newUnitInput); 
-                    this.newUnitInput = ''; 
-                } 
-            },
+            addUnit() { if(this.newUnitInput && !this.savedUnits.includes(this.newUnitInput)) { this.savedUnits.push(this.newUnitInput); this.newUnitInput = ''; } },
             removeUnit(index) { this.savedUnits.splice(index, 1); },
-            
             openPicker(rowIndex) { this.pickerEditingIndex = rowIndex; this.pickerSelectedCatIndex = 0; this.showPicker = true; },
             selectProductFromPicker(productName) { if (this.pickerEditingIndex !== null) this.items[this.pickerEditingIndex].name = productName; this.showPicker = false; },
-            
             exportSettings() {
                 const settings = { categories: this.categoryData, units: this.savedUnits, seller: this.seller, defaultNotes: localStorage.getItem('creamApp_notesDefault') || '' };
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(settings));
@@ -601,11 +626,8 @@
             loadConfig() {
                 const c = localStorage.getItem('creamApp_categories');
                 this.categoryData = c ? JSON.parse(c) : JSON.parse(JSON.stringify(DEFAULT_CATEGORY_DATA));
-                
-                // 讀取單位設定，若無則使用預設
                 const u = localStorage.getItem('creamApp_units');
                 this.savedUnits = u ? JSON.parse(u) : [...DEFAULT_UNITS];
-                
                 const sStamp = localStorage.getItem('creamApp_sellerStamp'); if (sStamp) this.sellerStamp = sStamp;
                 const bStamp = localStorage.getItem('creamApp_buyerStamp'); if (bStamp) this.buyerStamp = bStamp;
             },
@@ -656,7 +678,7 @@
                         this.seller = data.seller || this.seller; this.buyer = data.buyer || this.buyer; 
                         this.items = data.items || this.items; this.notes = data.notes || ''; 
                         this.docType = data.docType || 'quote'; this.docNumber = data.docNumber || '';
-                        if(data.quoteQtyLabel) this.quoteQtyLabel = data.quoteQtyLabel; // 讀取模式
+                        if(data.quoteQtyLabel) this.quoteQtyLabel = data.quoteQtyLabel;
                     } catch(e) {}
                 }
                 if (!this.seller.name) { const s = localStorage.getItem('creamApp_sellerDefault'); if (s) this.seller = JSON.parse(s); }
@@ -691,7 +713,6 @@
             if (this.items.length === 0) this.initItems();
             this.$nextTick(() => this.calculateScale());
             window.addEventListener('resize', this.calculateScale);
-            // 3. 綁定跨分頁同步事件
             window.addEventListener('storage', this.syncFromStorage);
         },
         unmounted() { 
