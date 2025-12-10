@@ -12,7 +12,7 @@
         font-src 'self' data:; 
         connect-src 'self';">
     
-    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Mobile Fix)</title>
+    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Top ID)</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -58,22 +58,52 @@
         h1 { font-size: 1.5rem; text-align: center; margin: 0 0 5px; color: #8D6E63; font-weight: 800; }
         h3 { font-size: 1.1rem; color: #5D4037; margin: 0 0 15px; border-left: 5px solid var(--secondary-accent); padding-left: 10px; display: flex; align-items: center; justify-content: space-between; }
 
-        .header-controls { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; }
+        .header-controls { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-bottom: 15px; }
         .title-group { text-align: center; width: 100%; }
         .sync-text { font-size: 0.8rem; color: #888; display: block; margin-top: 2px; }
         
-        .tabs { display: flex; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 50px; width: 100%; max-width: 400px; border: 1px solid rgba(255,255,255,0.6); }
+        /* 導覽列 & 按鈕 */
+        .nav-row { display: flex; gap: 10px; width: 100%; max-width: 600px; justify-content: center; }
+        .tabs { display: flex; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 50px; flex: 1; border: 1px solid rgba(255,255,255,0.6); }
         .tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; border-radius: 40px; font-weight: bold; color: #888; transition: 0.3s; font-size: 1rem; }
         .tab-btn.active { background: #FFF; color: var(--secondary-accent); box-shadow: 0 2px 8px rgba(208, 135, 112, 0.2); }
+        .settings-btn { background: rgba(255,255,255,0.9); border: 1px solid #CCC; border-radius: 20px; padding: 0 20px; font-size: 0.95rem; cursor: pointer; color: #555; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 
-        .settings-btn { background: rgba(255,255,255,0.9); border: 1px solid #CCC; border-radius: 20px; padding: 10px 20px; font-size: 0.95rem; cursor: pointer; color: #555; width: 100%; max-width: 400px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        /* --- 新增：頂部單據資訊列 (Doc Meta Bar) --- */
+        .doc-meta-bar {
+            display: flex; flex-wrap: wrap; gap: 15px; 
+            background: rgba(255,255,255,0.7); 
+            padding: 15px; border-radius: 16px; 
+            margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 4px 10px rgba(174, 159, 130, 0.1);
+            align-items: center;
+        }
+        .doc-field { flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 5px; }
+        .doc-field label { font-size: 0.85rem; color: #8D6E63; font-weight: bold; margin: 0; }
+        
+        /* 單號輸入框特別樣式 */
+        .doc-num-wrapper { position: relative; display: flex; align-items: center; }
+        .doc-num-input { 
+            width: 100%; padding: 10px 40px 10px 15px; 
+            border: 2px solid var(--primary-accent); 
+            border-radius: 10px; font-weight: bold; color: #5D4037; font-size: 1.1rem;
+            background: #fff;
+        }
+        .doc-refresh-btn {
+            position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; font-size: 1.2rem;
+            padding: 5px; border-radius: 50%; transition: 0.2s;
+        }
+        .doc-refresh-btn:hover { background: rgba(0,0,0,0.05); transform: translateY(-50%) rotate(90deg); }
+
+        /* Date Input */
+        .doc-date-input { width: 100%; padding: 10px; border: 1px solid #CCC; border-radius: 10px; font-size: 1rem; background: #fff; }
 
         @media (min-width: 768px) {
             .header-controls { flex-direction: row; justify-content: space-between; align-items: flex-end; }
             .title-group { text-align: left; width: auto; }
             .sync-text { text-align: left; }
-            .tabs { width: auto; min-width: 250px; margin-left: auto; margin-right: 15px; }
-            .settings-btn { width: auto; margin-bottom: 0; }
+            .nav-row { width: auto; margin-left: auto; }
         }
 
         /* --- Modal & Form --- */
@@ -116,17 +146,10 @@
         .preview-controls { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.8); padding: 8px 15px; border-radius: 50px; margin: 20px auto 10px; width: 90%; max-width: 300px; border: 1px solid #DDD; }
         .a4-preview-container { width: 100%; overflow-x: auto; background: transparent; padding: 10px 0; display: flex; justify-content: center; min-height: 500px; }
         .a4-page { 
-            background: white; 
-            width: 794px; /* A4 寬度 */
-            min-height: 1123px; /* A4 高度 */
-            padding: 40px 50px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.15); 
-            text-align: left; 
-            transform-origin: top center; 
-            transition: transform 0.3s ease; 
-            margin: 0 auto; 
-            flex-shrink: 0; 
-            position: relative; 
+            background: white; width: 794px; min-height: 1123px; padding: 40px 50px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15); text-align: left; 
+            transform-origin: top center; transition: transform 0.3s ease; 
+            margin: 0 auto; flex-shrink: 0; position: relative; 
             font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
         }
 
@@ -149,7 +172,6 @@
         .total-row { display: flex; justify-content: space-between; padding: 5px 0; }
         .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 13pt; margin-top: 8px; padding-top: 8px; }
         
-        /* --- 簽署區塊 --- */
         .signature-section { margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid; position: relative; gap: 20px; }
         .sign-box { flex: 1; border: 2px solid #333; border-radius: 4px; padding: 10px; position: relative; min-height: 150px; display: flex; flex-direction: column; align-items: center; }
         .stamp-img { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-3deg); width: 100px; height: 100px; object-fit: contain; opacity: 0.9; mix-blend-mode: multiply; pointer-events: none; z-index: 1; }
@@ -157,7 +179,7 @@
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white; margin: 0; padding: 0; }
-            .no-print, .header-controls, .glass-card, .btn-group, .preview-controls, .loading-overlay, .modal-overlay { display: none !important; }
+            .no-print, .header-controls, .doc-meta-bar, .glass-card, .btn-group, .preview-controls, .loading-overlay, .modal-overlay { display: none !important; }
             .container { max-width: 100%; width: 100%; margin: 0; padding: 0; }
             .a4-preview-container { display: block; width: 100%; height: auto !important; padding: 0; background: white; }
             .a4-page { width: 100% !important; margin: 0 !important; padding: 15mm 20mm !important; box-shadow: none !important; transform: none !important; }
@@ -165,7 +187,7 @@
             .sign-box { border: 2px solid #000; } 
         }
 
-        /* 模式切換按鈕 */
+        /* 模式切換 */
         .mode-toggle { display: flex; gap: 15px; background: rgba(255,255,255,0.6); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; align-items: center; }
         .mode-toggle label { margin: 0; cursor: pointer; display: flex; align-items: center; gap: 5px; color: #5D4037; }
 
@@ -174,13 +196,8 @@
         .tag-pill { background: #FFF; border: 1px solid #EBCB8B; border-radius: 15px; padding: 6px 12px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
         .tag-delete { cursor: pointer; color: #D08770; font-weight: bold; }
 
-        /* Loading Overlay */
-        .loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9); z-index: 2000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            backdrop-filter: blur(5px);
-        }
+        /* Loading */
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .spinner { width: 40px; height: 40px; border: 4px solid #EBCB8B; border-top: 4px solid #D08770; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -201,12 +218,27 @@
                 <span class="sync-text" v-else>💡 即時同步中...</span>
             </div>
             
-            <div class="tabs">
-                <button class="tab-btn" :class="{ active: docType === 'quote' }" @click="switchDoc('quote')">報價單</button>
-                <button class="tab-btn" :class="{ active: docType === 'delivery' }" @click="switchDoc('delivery')">出貨單</button>
+            <div class="nav-row">
+                <div class="tabs">
+                    <button class="tab-btn" :class="{ active: docType === 'quote' }" @click="switchDoc('quote')">報價單</button>
+                    <button class="tab-btn" :class="{ active: docType === 'delivery' }" @click="switchDoc('delivery')">出貨單</button>
+                </div>
+                <button class="settings-btn" @click="openSettings">⚙️ 設定</button>
             </div>
+        </div>
 
-            <button class="settings-btn" @click="openSettings">⚙️ 選項與備份</button>
+        <div class="doc-meta-bar">
+            <div class="doc-field">
+                <label>📄 單號 (可編輯)</label>
+                <div class="doc-num-wrapper">
+                    <input v-model="docNumber" class="doc-num-input" placeholder="自動產生或手動輸入">
+                    <button class="doc-refresh-btn" @click="generateDocNumber" title="重新產生單號">🔄</button>
+                </div>
+            </div>
+            <div class="doc-field">
+                <label>📅 日期</label>
+                <input type="date" v-model="date" class="doc-date-input">
+            </div>
         </div>
 
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
@@ -294,6 +326,18 @@
                     <div class="form-group"><input v-model="buyer.taxId" placeholder="統編"></div>
                     <div class="form-group"><input v-model="buyer.contact" placeholder="聯絡人"></div>
                     <div class="form-group"><input v-model="buyer.phone" placeholder="電話"></div>
+                </div>
+            </div>
+            <div style="margin-top:15px; border-top:1px dashed #ccc; padding-top:10px;">
+                <label>稅務設定</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <select v-model="taxType" style="flex:1; max-width:200px;">
+                        <option value="excluded">外加稅 (未稅)</option>
+                        <option value="included">內含稅 (含稅)</option>
+                    </select>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="number" v-model.number="taxRate" style="width: 60px; text-align:center;"><span>%</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -490,6 +534,8 @@
             items: { handler() { this.triggerAutoSave(); this.$nextTick(() => this.calculateScale()); }, deep: true },
             notes() { this.triggerAutoSave(); },
             quoteQtyLabel() { this.triggerAutoSave(); },
+            taxType() { this.triggerAutoSave(); }, 
+            taxRate() { this.triggerAutoSave(); },
             savedUnits: { handler() { localStorage.setItem('creamApp_units', JSON.stringify(this.savedUnits)); }, deep: true },
             sellerStamp() { localStorage.setItem('creamApp_sellerStamp', this.sellerStamp || ''); },
             buyerStamp() { localStorage.setItem('creamApp_buyerStamp', this.buyerStamp || ''); }
@@ -533,7 +579,6 @@
             },
             updateTitle() { document.title = `${this.docNumber}_${this.buyer.name || ''}`; },
             
-            // --- 核心修正：分享與 PDF 生成功能 ---
             async sharePdf() {
                 this.isLoading = true;
                 this.loadingText = '正在排版並生成高清 PDF...';
@@ -542,7 +587,6 @@
                 const originalTransform = element.style.transform;
                 const originalMargin = element.style.margin;
 
-                // 強制還原成 100% 大小，解決手機跑版問題
                 element.style.transform = 'scale(1)';
                 element.style.margin = '0 auto';
                 
@@ -574,22 +618,20 @@
                     this.isLoading = false;
 
                     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                        // 手機版原生分享
                         await navigator.share({
                             files: [file],
                             title: fileName,
                             text: '您的單據如附件。'
                         });
                     } else {
-                        // 【電腦版修正】強制加入 DOM 觸發下載
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.style.display = 'none';
                         a.href = url;
                         a.download = fileName;
-                        document.body.appendChild(a); // 關鍵：加入 DOM
+                        document.body.appendChild(a);
                         a.click();
-                        document.body.removeChild(a); // 移除
+                        document.body.removeChild(a);
                         URL.revokeObjectURL(url);
                         alert('💻 電腦版提示：\n\nPDF 已自動下載。\n請手動打開 Line 或 Email，將下載的檔案「拖曳」進去發送。');
                     }
@@ -602,7 +644,6 @@
                 }
             },
 
-            // --- 修正：Print Window 確保檔名正確 ---
             printWindow() {
                 const clientSuffix = this.buyer.name ? `_${this.buyer.name}` : '';
                 document.title = `${this.docNumber}${clientSuffix}`; 
@@ -696,6 +737,8 @@
                         this.items = data.items || this.items; this.notes = data.notes || ''; 
                         this.docType = data.docType || 'quote'; this.docNumber = data.docNumber || '';
                         if(data.quoteQtyLabel) this.quoteQtyLabel = data.quoteQtyLabel;
+                        if(data.taxType) this.taxType = data.taxType;
+                        if(data.taxRate) this.taxRate = data.taxRate;
                     } catch(e) {}
                 }
                 if (!this.seller.name) { const s = localStorage.getItem('creamApp_sellerDefault'); if (s) this.seller = JSON.parse(s); }
