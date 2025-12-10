@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>谷芳茶業有限公司 - 智慧單據系統 Pro</title>
+    
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self'; 
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdnjs.cloudflare.com; 
+        style-src 'self' 'unsafe-inline'; 
+        img-src 'self' data: blob:; 
+        font-src 'self' data:; 
+        connect-src 'self';">
+    
+    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Layout Fix)</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -16,33 +25,29 @@
             --secondary-accent: #D08770;
             --text-dark: #4C566A;
             --success-color: #A3BE8C;
-            --glass-bg: rgba(255, 255, 250, 0.95); /* 稍微增加不透明度以提升閱讀性 */
+            --glass-bg: rgba(255, 255, 250, 0.95);
             --glass-border: 1px solid rgba(255, 255, 255, 0.9);
             --glass-shadow: 0 8px 32px 0 rgba(174, 159, 130, 0.15); 
         }
 
         [v-cloak] { display: none !important; }
-        * { box-sizing: border-box; } /* 關鍵：確保 padding 不會撐爆寬度 */
+        * { box-sizing: border-box; }
 
         body {
             font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
             color: var(--text-dark);
-            margin: 0; padding: 10px; /* 手機版邊距減小 */
+            margin: 0; padding: 10px;
             min-height: 100vh;
             background: linear-gradient(135deg, #FDFBF7 0%, #F8E6C8 50%, #F2D7B6 100%);
             background-attachment: fixed;
-            touch-action: manipulation; /* 優化觸控反應 */
+            touch-action: manipulation;
         }
 
-        /* 容器最大寬度，適配 PC 與 iPad */
         .container { 
-            max-width: 1000px; 
-            margin: 0 auto; 
-            padding-bottom: 100px; 
-            width: 100%;
+            max-width: 1000px; margin: 0 auto; padding-bottom: 100px; width: 100%;
         }
 
-        /* --- Loading 遮罩 --- */
+        /* --- Loading --- */
         .loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.9); z-index: 2000;
@@ -55,50 +60,34 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- 狀態條 --- */
+        /* --- Status Bar --- */
         .status-bar { position: fixed; top: 0; left: 0; width: 100%; height: 3px; z-index: 999; background: transparent; }
         .status-bar.saving { background: var(--secondary-accent); animation: pulse 1s infinite; }
         .status-bar.saved { background: var(--success-color); transition: background 0.5s; }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-        /* --- 卡片風格 --- */
+        /* --- UI Components --- */
         .glass-card {
             background: var(--glass-bg);
             border-radius: 16px; border: var(--glass-border);
             box-shadow: var(--glass-shadow);
             padding: 20px; margin-bottom: 20px;
         }
-        /* 手機版卡片內距縮小，爭取空間 */
-        @media (max-width: 768px) { 
-            .glass-card { padding: 15px; border-radius: 12px; margin-bottom: 15px; } 
-        }
+        @media (max-width: 768px) { .glass-card { padding: 15px; border-radius: 12px; margin-bottom: 15px; } }
 
-        /* --- 標題與 Header 區塊 (Flex排版優化) --- */
         h1 { font-size: 1.5rem; text-align: center; margin: 0 0 5px; color: #8D6E63; font-weight: 800; }
         h3 { font-size: 1.1rem; color: #5D4037; margin: 0 0 15px; border-left: 5px solid var(--secondary-accent); padding-left: 10px; display: flex; align-items: center; justify-content: space-between; }
 
-        .header-controls { 
-            display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; 
-        }
+        .header-controls { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; }
         .title-group { text-align: center; width: 100%; }
         .sync-text { font-size: 0.8rem; color: #888; display: block; margin-top: 2px; }
         
-        /* 分頁按鈕 */
-        .tabs { 
-            display: flex; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 50px; 
-            width: 100%; max-width: 400px; border: 1px solid rgba(255,255,255,0.6); 
-        }
+        .tabs { display: flex; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 50px; width: 100%; max-width: 400px; border: 1px solid rgba(255,255,255,0.6); }
         .tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; border-radius: 40px; font-weight: bold; color: #888; transition: 0.3s; font-size: 1rem; }
         .tab-btn.active { background: #FFF; color: var(--secondary-accent); box-shadow: 0 2px 8px rgba(208, 135, 112, 0.2); }
 
-        /* 設定按鈕 */
-        .settings-btn { 
-            background: rgba(255,255,255,0.9); border: 1px solid #CCC; border-radius: 20px; 
-            padding: 10px 20px; font-size: 0.95rem; cursor: pointer; color: #555;
-            width: 100%; max-width: 400px; display: flex; align-items: center; justify-content: center; gap: 5px;
-        }
+        .settings-btn { background: rgba(255,255,255,0.9); border: 1px solid #CCC; border-radius: 20px; padding: 10px 20px; font-size: 0.95rem; cursor: pointer; color: #555; width: 100%; max-width: 400px; display: flex; align-items: center; justify-content: center; gap: 5px; }
 
-        /* PC / iPad 橫向排版 */
         @media (min-width: 768px) {
             .header-controls { flex-direction: row; justify-content: space-between; align-items: flex-end; }
             .title-group { text-align: left; width: auto; }
@@ -107,75 +96,34 @@
             .settings-btn { width: auto; margin-bottom: 0; }
         }
 
-        /* --- 修正功能 1: Modal 自適應 (解決裁切問題) --- */
-        .modal-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.5); z-index: 1500; 
-            display: flex; justify-content: center; align-items: center; 
-            padding: 10px; /* 給予邊距，避免貼邊 */
-        }
-        .modal-content { 
-            width: 100%; 
-            max-width: 600px; 
-            max-height: 90vh; /* 確保不超過視窗高度 */
-            overflow-y: auto; /* 內部滾動 */
-            display: flex; flex-direction: column;
-            background: #FFFAF0; /* 米色背景確保不透明 */
-        }
-        /* 優化 Modal 內的滾動體驗 */
-        .modal-content::-webkit-scrollbar { width: 6px; }
-        .modal-content::-webkit-scrollbar-thumb { background: #EBCB8B; border-radius: 3px; }
-
-        /* --- Picker --- */
-        .picker-container { display: flex; height: 50vh; border: 1px solid #DDD; border-radius: 10px; overflow: hidden; background: #fff; }
-        .picker-col { flex: 1; overflow-y: auto; padding: 10px; -webkit-overflow-scrolling: touch; }
-        .picker-col.left { background: rgba(235, 203, 139, 0.15); border-right: 1px solid #DDD; flex: 0 0 35%; }
-        .picker-item { padding: 12px 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; color: #555; }
-        .picker-item.active { background: var(--secondary-accent); color: white; font-weight: bold; }
-
-        /* --- 修正功能 2: 品項明細 (解決壓縮問題) --- */
+        /* --- Modal & Inputs --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1500; display: flex; justify-content: center; align-items: center; padding: 10px; }
+        .modal-content { width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; background: #FFFAF0; }
+        
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; gap: 20px; } }
         
         .form-group { margin-bottom: 12px; }
         label { display: block; margin-bottom: 6px; font-size: 0.95rem; color: #6D4C41; font-weight: bold; }
-        
-        /* 輸入框優化：16px 字體防止 iOS 自動放大，增加點擊區域 */
-        input, textarea, select { 
-            width: 100%; padding: 10px 12px; border: 1px solid #E0E0E0; 
-            border-radius: 10px; font-size: 16px; background: rgba(255, 255, 255, 0.8); 
-            transition: 0.3s;
-        }
-        input:focus { border-color: var(--secondary-accent); background: #FFF; outline: none; box-shadow: 0 0 0 2px rgba(208, 135, 112, 0.1); }
+        input, textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #E0E0E0; border-radius: 10px; font-size: 16px; background: rgba(255, 255, 255, 0.8); transition: 0.3s; }
+        input:focus { border-color: var(--secondary-accent); background: #FFF; outline: none; }
 
-        /* 表格容器：強制橫向滾動，並不隱藏卷軸 */
-        .table-wrapper { 
-            width: 100%; 
-            overflow-x: auto; 
-            -webkit-overflow-scrolling: touch; /* iOS 滑動慣性 */
-            margin-bottom: 15px; 
-            border-radius: 12px; 
-            border: 1px solid rgba(0,0,0,0.05);
-            background: #fff;
-        }
-        
+        /* --- Table --- */
+        .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 15px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); background: #fff; }
         .table-editor { width: 100%; border-collapse: collapse; }
-        /* 關鍵：設定欄位最小寬度，防止內容被擠壓 */
         .table-editor th, .table-editor td { padding: 8px; vertical-align: middle; white-space: nowrap; }
         .table-editor th { background: rgba(235, 203, 139, 0.3); color: #5D4037; text-align: left; }
         
-        /* 給予每個輸入框適當的最小寬度 */
         .col-btn { width: 40px; min-width: 40px; }
-        .col-name { min-width: 160px; } /* 品名要長一點 */
+        .col-name { min-width: 160px; }
         .col-price { min-width: 90px; }
         .col-qty { min-width: 70px; }
         .col-unit { min-width: 70px; }
         .col-total { min-width: 90px; text-align: right; }
 
         .btn-icon { background: #FFF; border: 1px solid #FFCDCD; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; color: #D32F2F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .btn-search { color: #5D4037; border-color: #EBCB8B; margin-left: 5px; }
-
-        /* --- 按鈕組 --- */
+        
+        /* --- Buttons --- */
         .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         @media (min-width: 768px) { .btn-group { flex-direction: row; } }
         .btn { padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; color: white; transition: 0.2s; }
@@ -187,43 +135,18 @@
         .btn-danger { background: #FFEBEE; color: #D32F2F; border: 1px solid #FFCDCD; }
         .btn-sm { padding: 6px 12px; font-size: 0.85rem; border-radius: 15px; border: 1px solid #CCC; background: #FFF; cursor: pointer; }
 
-        /* --- 修正功能 3: 單據預覽 (解決滑動與裁切) --- */
-        .preview-controls { 
-            display: flex; justify-content: space-between; align-items: center; 
-            background: rgba(255,255,255,0.8); padding: 8px 15px; 
-            border-radius: 50px; margin: 20px auto 10px; 
-            width: 90%; max-width: 300px; 
-            border: 1px solid #DDD; 
-        }
-        
-        .a4-preview-container { 
-            width: 100%;
-            /* 允許水平滾動，解決切邊問題 */
-            overflow-x: auto; 
-            overflow-y: hidden;
-            background: transparent; 
-            padding: 10px 0; 
-            display: flex; 
-            justify-content: center; /* 讓內容置中 */
-            align-items: flex-start;
-            min-height: 500px; /* 預留高度 */
-        }
-        
-        /* A4 紙張本體 */
-        .a4-page { 
-            background: white; 
-            width: 794px; /* A4 寬度 px */
-            min-height: 1123px; /* A4 高度 px */
-            padding: 40px 50px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.15); 
-            text-align: left; 
-            transform-origin: top center; /* 從頂部中心縮放 */
-            transition: transform 0.3s ease;
-            margin: 0 auto; /* 確保沒縮放時也置中 */
-            flex-shrink: 0; /* 防止 Flex 壓縮它 */
-        }
+        /* --- Stamp Upload Area --- */
+        .stamp-upload-area { display: flex; gap: 20px; flex-wrap: wrap; }
+        .stamp-box { flex: 1; min-width: 140px; border: 2px dashed #EBCB8B; border-radius: 10px; padding: 10px; text-align: center; background: rgba(255,255,255,0.5); position: relative; }
+        .stamp-preview { width: 100px; height: 100px; object-fit: contain; margin: 10px auto; display: block; border: 1px solid #eee; background: white; }
+        .stamp-label { font-size: 0.9rem; font-weight: bold; color: #5D4037; margin-bottom: 5px; display: block;}
 
-        /* --- 列印專用樣式 (隱藏介面) --- */
+        /* --- Preview & A4 --- */
+        .preview-controls { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.8); padding: 8px 15px; border-radius: 50px; margin: 20px auto 10px; width: 90%; max-width: 300px; border: 1px solid #DDD; }
+        .a4-preview-container { width: 100%; overflow-x: auto; overflow-y: hidden; background: transparent; padding: 10px 0; display: flex; justify-content: center; align-items: flex-start; min-height: 500px; }
+        .a4-page { background: white; width: 794px; min-height: 1123px; padding: 40px 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); text-align: left; transform-origin: top center; transition: transform 0.3s ease; margin: 0 auto; flex-shrink: 0; position: relative; }
+
+        /* --- Print Layout --- */
         .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 30px; }
         .doc-title { font-size: 24pt; font-weight: bold; color: #000; }
         .doc-meta { text-align: right; font-size: 10pt; line-height: 1.5; }
@@ -242,8 +165,34 @@
         .totals-area { width: 35%; font-size: 11pt; }
         .total-row { display: flex; justify-content: space-between; padding: 5px 0; }
         .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 13pt; margin-top: 8px; padding-top: 8px; }
-        .signature-section { margin-top: 60px; display: flex; justify-content: space-between; text-align: center; page-break-inside: avoid; break-inside: avoid; }
-        .sign-box { width: 40%; border-top: 1px solid #000; padding-top: 10px; }
+        
+        .signature-section { margin-top: 60px; display: flex; justify-content: space-between; text-align: center; page-break-inside: avoid; break-inside: avoid; position: relative; }
+        
+        /* 修正後的簽名框與印章樣式 */
+        .sign-box { 
+            width: 40%; 
+            border-top: 1px solid #000; /* 這是那條線 */
+            padding-top: 10px; 
+            position: relative; 
+            min-height: 150px; /* 拉高高度，預留空間給印章 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stamp-img {
+            position: absolute;
+            top: 40px; /* 將印章往下移，避開上方的線條與文字 */
+            left: 50%;
+            transform: translateX(-50%) rotate(-3deg);
+            width: 110px;
+            height: 110px;
+            object-fit: contain;
+            opacity: 0.9;
+            mix-blend-mode: multiply; /* 正片疊底，保留真實感 */
+            pointer-events: none;
+            z-index: 1;
+        }
 
         @media print {
             @page { size: A4; margin: 0; }
@@ -252,6 +201,7 @@
             .container { max-width: 100%; width: 100%; margin: 0; padding: 0; }
             .a4-preview-container { display: block; width: 100%; height: auto !important; overflow: visible; padding: 0; background: white; }
             .a4-page { width: 100% !important; margin: 0 !important; padding: 15mm 20mm !important; box-shadow: none !important; transform: none !important; }
+            .stamp-img { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
         
         /* 標籤樣式 */
@@ -327,23 +277,6 @@
                             <button class="btn-sm" @click="addItemToCat(catIdx)">+</button>
                         </div>
                     </div>
-                    <div style="display:flex; gap:10px; margin-top:10px; padding-top:10px; border-top:1px dashed #CCC;">
-                        <input v-model="newCategoryName" placeholder="新增分類名稱 (例: 禮盒區)" @keyup.enter="addCategory">
-                        <button class="btn-sm" style="background:#EBCB8B; color:#fff; border:none; width: 80px;" @click="addCategory">新增</button>
-                    </div>
-                </div>
-
-                <div>
-                    <label>📏 單位清單</label>
-                    <div class="tag-container" style="margin-bottom:10px;">
-                        <div v-for="(u, idx) in savedUnits" :key="idx" class="tag-pill">
-                            {{ u }} <span class="tag-delete" @click="removeUnit(idx)">×</span>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <input v-model="newUnitInput" placeholder="輸入新單位" @keyup.enter="addUnit">
-                        <button class="btn-sm" @click="addUnit">新增</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -354,24 +287,16 @@
                     <h3 style="margin:0; border:none;">🔍 選擇產品</h3>
                     <button class="btn-icon" @click="showPicker = false">×</button>
                 </div>
-                
                 <div class="picker-container">
                     <div class="picker-col left">
-                        <div v-for="(cat, idx) in categoryData" :key="idx" 
-                             class="picker-item" 
-                             :class="{ active: pickerSelectedCatIndex === idx }"
-                             @click="pickerSelectedCatIndex = idx">
+                        <div v-for="(cat, idx) in categoryData" :key="idx" class="picker-item" :class="{ active: pickerSelectedCatIndex === idx }" @click="pickerSelectedCatIndex = idx">
                             {{ cat.name }}
                         </div>
                     </div>
                     <div class="picker-col right">
-                        <div v-if="pickerSelectedCatIndex === -1" style="color:#999; text-align:center; margin-top:20px;">
-                            請先點選左側分類
-                        </div>
+                        <div v-if="pickerSelectedCatIndex === -1" style="color:#999; text-align:center; margin-top:20px;">請先點選左側分類</div>
                         <div v-else>
-                            <div v-for="(item, idx) in categoryData[pickerSelectedCatIndex].items" :key="idx"
-                                 class="picker-item"
-                                 @click="selectProductFromPicker(item)">
+                            <div v-for="(item, idx) in categoryData[pickerSelectedCatIndex].items" :key="idx" class="picker-item" @click="selectProductFromPicker(item)">
                                 {{ item }}
                             </div>
                         </div>
@@ -397,29 +322,36 @@
                     <div class="form-group"><input v-model="buyer.phone" placeholder="聯絡電話"></div>
                 </div>
             </div>
-            <hr style="border:0; border-top: 1px dashed rgba(0,0,0,0.1); margin: 20px 0;">
-            <div class="form-grid">
-                <div>
-                    <label>單號 (自動產生)</label>
-                    <div style="display:flex; gap:10px;">
-                        <input v-model="docNumber" style="flex:1">
-                        <button class="btn-sm" @click="generateDocNumber">刷新</button>
+        </div>
+
+        <div class="glass-card">
+            <h3>💮 印章管理 (自動記憶)</h3>
+            <div class="stamp-upload-area">
+                <div class="stamp-box">
+                    <span class="stamp-label">賣方公司章 (我方)</span>
+                    <img v-if="sellerStamp" :src="sellerStamp" class="stamp-preview">
+                    <div v-else style="height:100px; line-height:100px; color:#ccc; font-size:0.8rem;">尚未上傳</div>
+                    <div style="display:flex; gap:5px; justify-content:center;">
+                        <button class="btn-sm" onclick="document.getElementById('sellerStampInput').click()">上傳圖檔</button>
+                        <button class="btn-sm" style="color:red;" @click="clearStamp('seller')">清除</button>
                     </div>
+                    <input type="file" id="sellerStampInput" style="display:none" accept="image/*" @change="handleStampUpload($event, 'seller')">
                 </div>
-                <div><label>日期</label><input type="date" v-model="date"></div>
-                <div>
-                    <label>稅務設定</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <select v-model="taxType" style="flex:1">
-                            <option value="excluded">外加稅 (未稅)</option>
-                            <option value="included">內含稅 (含稅)</option>
-                        </select>
-                        <div style="display:flex; align-items:center; gap:5px;">
-                            <input type="number" v-model.number="taxRate" style="width: 50px; text-align:center;"><span>%</span>
-                        </div>
+                
+                <div class="stamp-box">
+                    <span class="stamp-label">買方簽收章 (客戶)</span>
+                    <img v-if="buyerStamp" :src="buyerStamp" class="stamp-preview">
+                    <div v-else style="height:100px; line-height:100px; color:#ccc; font-size:0.8rem;">尚未上傳</div>
+                    <div style="display:flex; gap:5px; justify-content:center;">
+                        <button class="btn-sm" onclick="document.getElementById('buyerStampInput').click()">上傳圖檔</button>
+                        <button class="btn-sm" style="color:red;" @click="clearStamp('buyer')">清除</button>
                     </div>
+                    <input type="file" id="buyerStampInput" style="display:none" accept="image/*" @change="handleStampUpload($event, 'buyer')">
                 </div>
             </div>
+            <p style="font-size:0.85rem; color:#888; margin-top:10px;">
+                💡 提示：建議使用背景透明的 PNG 檔。系統會自動儲存，下次不用重新上傳。
+            </p>
         </div>
 
         <div class="glass-card">
@@ -485,10 +417,7 @@
         
         <div class="preview-controls">
             <strong>👁️ 單據預覽</strong>
-            <div class="scale-info" style="font-size:0.9rem; color:#555;">
-                {{ Math.round(previewScale * 100) }}% 
-                <span v-if="isMobile">(可縮放)</span>
-            </div>
+            <div class="scale-info" style="font-size:0.9rem; color:#555;">{{ Math.round(previewScale * 100) }}% <span v-if="isMobile">(可縮放)</span></div>
         </div>
     </div>
 
@@ -553,8 +482,14 @@
             </div>
             
             <div class="signature-section">
-                <div class="sign-box">買方簽署</div>
-                <div class="sign-box">賣方簽署</div>
+                <div class="sign-box">
+                    買方簽署
+                    <img v-if="buyerStamp" :src="buyerStamp" class="stamp-img">
+                </div>
+                <div class="sign-box">
+                    賣方簽署
+                    <img v-if="sellerStamp" :src="sellerStamp" class="stamp-img">
+                </div>
             </div>
         </div>
     </div>
@@ -582,7 +517,11 @@
                 isLoading: false, loadingText: '',
                 
                 showSettings: false, categoryData: [], newCategoryName: '', savedUnits: [], newUnitInput: '',
-                showPicker: false, pickerEditingIndex: null, pickerSelectedCatIndex: 0
+                showPicker: false, pickerEditingIndex: null, pickerSelectedCatIndex: 0,
+                
+                // 新增印章資料
+                sellerStamp: null,
+                buyerStamp: null
             }
         },
         watch: {
@@ -599,7 +538,10 @@
             taxRate() { this.triggerAutoSave(); },
             quoteQtyLabel() { this.triggerAutoSave(); },
             categoryData: { handler() { localStorage.setItem('creamApp_categories', JSON.stringify(this.categoryData)); }, deep: true },
-            savedUnits: { handler() { localStorage.setItem('creamApp_units', JSON.stringify(this.savedUnits)); }, deep: true }
+            savedUnits: { handler() { localStorage.setItem('creamApp_units', JSON.stringify(this.savedUnits)); }, deep: true },
+            // 監聽印章變更並儲存
+            sellerStamp() { localStorage.setItem('creamApp_sellerStamp', this.sellerStamp || ''); },
+            buyerStamp() { localStorage.setItem('creamApp_buyerStamp', this.buyerStamp || ''); }
         },
         computed: {
             docTitle() { return this.docType === 'quote' ? '報 價 單 (Quotation)' : '出 貨 單 (Delivery Note)'; },
@@ -616,6 +558,32 @@
             }
         },
         methods: {
+            // --- 印章處理函數 ---
+            handleStampUpload(event, type) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                // 限制檔案大小 (例如 500KB)，避免 LocalStorage 爆滿
+                if (file.size > 500 * 1024) {
+                    alert('圖片太大囉！建議使用 500KB 以下的圖檔，以確保系統順暢。');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if (type === 'seller') this.sellerStamp = e.target.result;
+                    else this.buyerStamp = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            },
+            clearStamp(type) {
+                if(confirm('確定要移除此印章嗎？')) {
+                    if (type === 'seller') this.sellerStamp = null;
+                    else this.buyerStamp = null;
+                }
+            },
+            // ---------------------
+
             updateTitle() { 
                 const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
                 document.title = `${this.docNumber}${clientName}`; 
@@ -670,7 +638,11 @@
                 this.showPicker = false;
             },
             exportSettings() {
-                const settings = { categories: this.categoryData, units: this.savedUnits, seller: this.seller, defaultNotes: localStorage.getItem('creamApp_notesDefault') || '' };
+                const settings = { 
+                    categories: this.categoryData, units: this.savedUnits, seller: this.seller, 
+                    defaultNotes: localStorage.getItem('creamApp_notesDefault') || '',
+                    // 匯出時不包含圖片，因為太大了可能會導致錯誤，或是讓用戶知道
+                };
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(settings));
                 const a = document.createElement('a');
                 a.href = dataStr; a.download = "Gufang_Settings.json"; document.body.appendChild(a); a.click(); a.remove();
@@ -698,20 +670,21 @@
                 this.categoryData = c ? JSON.parse(c) : JSON.parse(JSON.stringify(DEFAULT_CATEGORY_DATA));
                 const u = localStorage.getItem('creamApp_units');
                 this.savedUnits = u ? JSON.parse(u) : [...DEFAULT_UNITS];
+                
+                // 讀取印章
+                const sStamp = localStorage.getItem('creamApp_sellerStamp');
+                if (sStamp) this.sellerStamp = sStamp;
+                const bStamp = localStorage.getItem('creamApp_buyerStamp');
+                if (bStamp) this.buyerStamp = bStamp;
             },
-            // --- 修正 4: 預覽縮放邏輯 (解決切邊) ---
             calculateScale() {
-                // 取得目前容器寬度，減去左右邊距
                 const containerWidth = this.isMobile ? window.innerWidth - 20 : window.innerWidth - 40;
                 const a4Width = 794;
-                
                 if (containerWidth < a4Width) {
                     this.isMobile = true;
-                    // 保留一點邊距，不要讓紙張貼死螢幕邊緣
                     this.previewScale = (containerWidth / a4Width) * 0.95;
                     if (this.$refs.a4Page) {
                          const realHeight = this.$refs.a4Page.scrollHeight;
-                         // 計算縮放後的高度 + 底部緩衝
                          this.containerHeight = (realHeight * this.previewScale + 50) + 'px';
                     }
                 } else {
