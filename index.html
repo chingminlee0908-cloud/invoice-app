@@ -12,7 +12,7 @@
         font-src 'self' data:; 
         connect-src 'self';">
     
-    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Identity Switch)</title>
+    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Farmer Mode Fix)</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -518,8 +518,10 @@
             <div class="bottom-section">
                 <div class="notes-area"><strong>備註：</strong><br>{{ notes }}</div>
                 <div class="totals-area">
-                    <div class="total-row"><span>未稅：</span><span>$ {{ formatNumber(totals.subtotal) }}</span></div>
-                    <div class="total-row"><span>稅額 ({{ taxRate }}%)：</span><span>$ {{ formatNumber(totals.tax) }}</span></div>
+                    <template v-if="sellerIdentity === 'company'">
+                        <div class="total-row"><span>未稅：</span><span>$ {{ formatNumber(totals.subtotal) }}</span></div>
+                        <div class="total-row"><span>稅額 ({{ taxRate }}%)：</span><span>$ {{ formatNumber(totals.tax) }}</span></div>
+                    </template>
                     <div class="total-row final"><span>總計：</span><span>$ {{ formatNumber(totals.total) }}</span></div>
                 </div>
             </div>
@@ -553,7 +555,7 @@
                 docType: 'quote', docNumber: '', date: new Date().toISOString().split('T')[0],
                 taxType: 'excluded', taxRate: 5, quoteQtyLabel: 'qty',
                 
-                // 身分切換：company | farmer
+                // 身分切換
                 sellerIdentity: 'company',
                 
                 seller: { name: '谷芳茶業有限公司', phone: '', address: '' },
@@ -584,10 +586,9 @@
             sellerStamp() { localStorage.setItem('creamApp_sellerStamp', this.sellerStamp || ''); },
             buyerStamp() { localStorage.setItem('creamApp_buyerStamp', this.buyerStamp || ''); },
             
-            // 監聽身分切換，自動載入對應的預設資料
             sellerIdentity(newVal) {
                 this.loadSellerProfile(newVal);
-                this.triggerAutoSave(); // 切換後也要存檔，記住當前狀態
+                this.triggerAutoSave(); 
             }
         },
         computed: {
@@ -725,7 +726,6 @@
                             if (settings.categories) this.categoryData = settings.categories;
                             if (settings.units) this.savedUnits = settings.units;
                             if (settings.seller) { 
-                                // 匯入時，看當前身分是啥就覆蓋誰
                                 if(this.sellerIdentity === 'company') {
                                     localStorage.setItem('creamApp_sellerDefault_company', JSON.stringify(settings.seller));
                                 } else {
@@ -782,20 +782,18 @@
                     seller: this.seller, buyer: this.buyer, items: this.items, notes: this.notes, 
                     docType: this.docType, docNumber: this.docNumber, date: this.date, 
                     taxType: this.taxType, taxRate: this.taxRate, quoteQtyLabel: this.quoteQtyLabel,
-                    sellerIdentity: this.sellerIdentity // 記得存下當前身分
+                    sellerIdentity: this.sellerIdentity 
                 };
                 localStorage.setItem('creamApp_autoSave', JSON.stringify(data));
                 this.saveStatus = 'saved';
             },
             
-            // --- 核心：切換身分並載入對應預設值 ---
             loadSellerProfile(identity) {
                 const key = identity === 'company' ? 'creamApp_sellerDefault_company' : 'creamApp_sellerDefault_farmer';
                 const saved = localStorage.getItem(key);
                 if (saved) {
                     this.seller = JSON.parse(saved);
                 } else {
-                    // 若無存檔，給予空白預設
                     this.seller = { name: '', phone: '', address: '' };
                 }
             },
@@ -805,7 +803,6 @@
                 if (saved) {
                     try {
                         const data = JSON.parse(saved);
-                        // 先載入身分
                         if (data.sellerIdentity) this.sellerIdentity = data.sellerIdentity;
                         
                         this.seller = data.seller || this.seller; 
@@ -818,7 +815,6 @@
                     } catch(e) {}
                 }
                 
-                // 如果是第一次使用，且沒有賣方資料，嘗試載入公司預設
                 if (!this.seller.name) { 
                     this.loadSellerProfile(this.sellerIdentity);
                 }
@@ -826,7 +822,6 @@
                 if (!this.notes) { const n = localStorage.getItem('creamApp_notesDefault'); if (n) this.notes = n; }
             },
             
-            // 儲存目前身分的預設值
             saveSellerToLocal() { 
                 const key = this.sellerIdentity === 'company' ? 'creamApp_sellerDefault_company' : 'creamApp_sellerDefault_farmer';
                 localStorage.setItem(key, JSON.stringify(this.seller)); 
@@ -835,11 +830,10 @@
             
             saveNotesToDefault() { localStorage.setItem('creamApp_notesDefault', this.notes); alert('✅ 已設定預設'); },
             clearData() { if(confirm('清空欄位？')) { this.initItems(); this.generateDocNumber(); this.buyer = { name: '', taxId: '', contact: '', phone: '' }; this.notes = localStorage.getItem('creamApp_notesDefault') || ''; } },
+            
             exportExcel() {
                 if (typeof XLSX === 'undefined') { alert("❌ 無法載入 Excel"); return; }
                 const qtyHeader = (this.quoteQtyLabel === 'moq') ? 'MOQ (最低量)' : '數量';
-                
-                // 根據身分改變 Excel 內的標題
                 const sellerTitle = this.sellerIdentity === 'company' ? "賣方公司：" : "賣方姓名：";
                 
                 let ws_data = [
@@ -852,7 +846,15 @@
                     ["品名", "價格", qtyHeader, "單位", "金額"]
                 ];
                 this.items.filter(i => i.name).forEach(i => { ws_data.push([i.name, i.price, i.quantity, i.unit || '-', this.calculateRowTotal(i)]); });
-                ws_data.push([], ["", "", "", "未稅:", this.totals.subtotal], ["", "", "", "稅額:", this.totals.tax], ["", "", "", "總計:", this.totals.total], [], ["備註:", this.notes]);
+                
+                ws_data.push([]); 
+                if (this.sellerIdentity === 'company') {
+                    ws_data.push(["", "", "", "未稅:", this.totals.subtotal]);
+                    ws_data.push(["", "", "", `稅額 (${this.taxRate}%):`, this.totals.tax]);
+                }
+                ws_data.push(["", "", "", "總計:", this.totals.total]);
+                ws_data.push([], ["備註:", this.notes]);
+                
                 const ws = XLSX.utils.aoa_to_sheet(ws_data); ws['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 15 }];
                 const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "單據內容");
                 XLSX.writeFile(wb, `${this.docNumber}.xlsx`);
