@@ -12,7 +12,7 @@
         font-src 'self' data:; 
         connect-src 'self';">
     
-    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Top ID)</title>
+    <title>谷芳茶業有限公司 - 智慧單據系統 Pro</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -58,18 +58,25 @@
         h1 { font-size: 1.5rem; text-align: center; margin: 0 0 5px; color: #8D6E63; font-weight: 800; }
         h3 { font-size: 1.1rem; color: #5D4037; margin: 0 0 15px; border-left: 5px solid var(--secondary-accent); padding-left: 10px; display: flex; align-items: center; justify-content: space-between; }
 
-        .header-controls { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-bottom: 15px; }
+        .header-controls { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-bottom: 20px; }
         .title-group { text-align: center; width: 100%; }
         .sync-text { font-size: 0.8rem; color: #888; display: block; margin-top: 2px; }
         
-        /* 導覽列 & 按鈕 */
-        .nav-row { display: flex; gap: 10px; width: 100%; max-width: 600px; justify-content: center; }
-        .tabs { display: flex; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 50px; flex: 1; border: 1px solid rgba(255,255,255,0.6); }
+        .tabs { display: flex; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 50px; width: 100%; max-width: 400px; border: 1px solid rgba(255,255,255,0.6); }
         .tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; border-radius: 40px; font-weight: bold; color: #888; transition: 0.3s; font-size: 1rem; }
         .tab-btn.active { background: #FFF; color: var(--secondary-accent); box-shadow: 0 2px 8px rgba(208, 135, 112, 0.2); }
-        .settings-btn { background: rgba(255,255,255,0.9); border: 1px solid #CCC; border-radius: 20px; padding: 0 20px; font-size: 0.95rem; cursor: pointer; color: #555; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 
-        /* --- 新增：頂部單據資訊列 (Doc Meta Bar) --- */
+        .settings-btn { background: rgba(255,255,255,0.9); border: 1px solid #CCC; border-radius: 20px; padding: 10px 20px; font-size: 0.95rem; cursor: pointer; color: #555; width: 100%; max-width: 400px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+
+        @media (min-width: 768px) {
+            .header-controls { flex-direction: row; justify-content: space-between; align-items: flex-end; }
+            .title-group { text-align: left; width: auto; }
+            .sync-text { text-align: left; }
+            .tabs { width: auto; min-width: 250px; margin-left: auto; margin-right: 15px; }
+            .settings-btn { width: auto; margin-bottom: 0; }
+        }
+
+        /* --- 頂部單據資訊列 --- */
         .doc-meta-bar {
             display: flex; flex-wrap: wrap; gap: 15px; 
             background: rgba(255,255,255,0.7); 
@@ -81,7 +88,6 @@
         .doc-field { flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 5px; }
         .doc-field label { font-size: 0.85rem; color: #8D6E63; font-weight: bold; margin: 0; }
         
-        /* 單號輸入框特別樣式 */
         .doc-num-wrapper { position: relative; display: flex; align-items: center; }
         .doc-num-input { 
             width: 100%; padding: 10px 40px 10px 15px; 
@@ -96,15 +102,7 @@
         }
         .doc-refresh-btn:hover { background: rgba(0,0,0,0.05); transform: translateY(-50%) rotate(90deg); }
 
-        /* Date Input */
         .doc-date-input { width: 100%; padding: 10px; border: 1px solid #CCC; border-radius: 10px; font-size: 1rem; background: #fff; }
-
-        @media (min-width: 768px) {
-            .header-controls { flex-direction: row; justify-content: space-between; align-items: flex-end; }
-            .title-group { text-align: left; width: auto; }
-            .sync-text { text-align: left; }
-            .nav-row { width: auto; margin-left: auto; }
-        }
 
         /* --- Modal & Form --- */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1500; display: flex; justify-content: center; align-items: center; padding: 10px; }
@@ -172,6 +170,7 @@
         .total-row { display: flex; justify-content: space-between; padding: 5px 0; }
         .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 13pt; margin-top: 8px; padding-top: 8px; }
         
+        /* --- 簽署區塊 --- */
         .signature-section { margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid; position: relative; gap: 20px; }
         .sign-box { flex: 1; border: 2px solid #333; border-radius: 4px; padding: 10px; position: relative; min-height: 150px; display: flex; flex-direction: column; align-items: center; }
         .stamp-img { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-3deg); width: 100px; height: 100px; object-fit: contain; opacity: 0.9; mix-blend-mode: multiply; pointer-events: none; z-index: 1; }
@@ -218,13 +217,12 @@
                 <span class="sync-text" v-else>💡 即時同步中...</span>
             </div>
             
-            <div class="nav-row">
-                <div class="tabs">
-                    <button class="tab-btn" :class="{ active: docType === 'quote' }" @click="switchDoc('quote')">報價單</button>
-                    <button class="tab-btn" :class="{ active: docType === 'delivery' }" @click="switchDoc('delivery')">出貨單</button>
-                </div>
-                <button class="settings-btn" @click="openSettings">⚙️ 設定</button>
+            <div class="tabs">
+                <button class="tab-btn" :class="{ active: docType === 'quote' }" @click="switchDoc('quote')">報價單</button>
+                <button class="tab-btn" :class="{ active: docType === 'delivery' }" @click="switchDoc('delivery')">出貨單</button>
             </div>
+
+            <button class="settings-btn" @click="openSettings">⚙️ 選項與備份</button>
         </div>
 
         <div class="doc-meta-bar">
@@ -417,6 +415,7 @@
                 <button class="btn btn-danger" @click="clearData">🗑️ 清空</button>
                 <button class="btn btn-share" @click="sharePdf">📤 分享 (Line/Mail)</button>
                 <button class="btn btn-primary" @click="printWindow">🖨️ 列印/存檔</button>
+                <button class="btn btn-success" @click="exportExcel">📊 匯出 Excel</button>
             </div>
         </div>
 
@@ -587,6 +586,7 @@
                 const originalTransform = element.style.transform;
                 const originalMargin = element.style.margin;
 
+                // 強制還原成 100% 大小，確保截圖清晰不跑版
                 element.style.transform = 'scale(1)';
                 element.style.margin = '0 auto';
                 
@@ -618,20 +618,22 @@
                     this.isLoading = false;
 
                     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        // 手機/平板支援原生分享
                         await navigator.share({
                             files: [file],
                             title: fileName,
                             text: '您的單據如附件。'
                         });
                     } else {
+                        // 【電腦版修正】強制加入 DOM 觸發下載
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.style.display = 'none';
                         a.href = url;
                         a.download = fileName;
-                        document.body.appendChild(a);
+                        document.body.appendChild(a); // 關鍵：加入 DOM
                         a.click();
-                        document.body.removeChild(a);
+                        document.body.removeChild(a); // 移除
                         URL.revokeObjectURL(url);
                         alert('💻 電腦版提示：\n\nPDF 已自動下載。\n請手動打開 Line 或 Email，將下載的檔案「拖曳」進去發送。');
                     }
@@ -644,6 +646,7 @@
                 }
             },
 
+            // --- 修正：Print Window 確保檔名正確 ---
             printWindow() {
                 const clientSuffix = this.buyer.name ? `_${this.buyer.name}` : '';
                 document.title = `${this.docNumber}${clientSuffix}`; 
