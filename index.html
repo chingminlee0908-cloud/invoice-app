@@ -12,7 +12,7 @@
         font-src 'self' data:; 
         connect-src 'self' blob:;">
     
-    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Line PDF Fix)</title>
+    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (JPG Mode)</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -451,7 +451,7 @@
             <textarea v-model="notes" rows="3"></textarea>
             <div class="btn-group">
                 <button class="btn btn-danger" @click="clearData">🗑️ 清空</button>
-                <button class="btn btn-share" @click="sharePdf">🚀 傳送 LINE / 下載</button>
+                <button class="btn btn-share" @click="sharePdf">🚀 傳送 LINE (圖片)</button>
                 <button class="btn btn-primary" @click="printWindow">🖨️ 列印 / 存檔</button>
                 <button class="btn btn-success" @click="exportExcel">📊 匯出 Excel</button>
             </div>
@@ -630,62 +630,56 @@
             },
             updateTitle() { document.title = `${this.docNumber}_${this.buyer.name || ''}`; },
             
-            async sharePdf() {
+            // --- 使用您提供的代碼更新 sharePdf 函式 ---
+            async sharePdf() { 
                 this.isLoading = true;
-                this.loadingText = '正在生成 PDF，準備喚起 Line...';
+                this.loadingText = '正在生成圖片，準備喚起 Line...';
 
                 const element = document.getElementById('print-area');
+                
+                // 1. 暫時調整樣式以利截圖
                 const originalTransform = element.style.transform;
                 const originalMargin = element.style.margin;
-
-                // 暫時還原縮放比例以生成清晰 PDF
                 element.style.transform = 'scale(1)';
                 element.style.margin = '0 auto';
-                
-                await this.$nextTick(); 
+                await this.$nextTick();
 
+                // 2. 設定檔名
                 const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
-                const fileName = `${this.docNumber}${clientName}.pdf`;
+                const fileName = `${this.docNumber}${clientName}.jpg`; // 副檔名改為 jpg
 
+                // 3. 使用 html2pdf 的 img 功能
                 const opt = {
                     margin: 0,
                     filename: fileName,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { 
-                        scale: 2, 
-                        useCORS: true, 
-                        scrollY: 0,
-                        windowWidth: 794, 
-                        windowHeight: 1123 
-                    },
+                    image: { type: 'jpeg', quality: 0.98 }, // 設定 JPG 品質
+                    html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
                 try {
-                    // 1. 生成 Blob 物件
-                    const blob = await html2pdf().set(opt).from(element).output('blob');
-                    const file = new File([blob], fileName, { type: 'application/pdf' });
-
+                    // 利用 html2pdf.worker 取得圖片 blob
+                    const worker = html2pdf().set(opt).from(element);
+                    const imgBlob = await worker.outputImg('blob'); // 輸出圖片 blob
+                    
                     // 復原畫面
                     element.style.transform = originalTransform;
                     element.style.margin = originalMargin;
                     this.isLoading = false;
 
-                    // 2. 判斷是否支援 Web Share API (手機版 Chrome 通常支援)
+                    const file = new File([imgBlob], fileName, { type: 'image/jpeg' });
+
+                    // A. 手機版：呼叫原生分享
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                files: [file],
-                                title: fileName,
-                                text: `這是您的單據：${fileName}，請查收。`
-                            });
-                            // 使用者在手機跳出的選單中點選 Line 即可傳送檔案
-                        } catch (err) {
-                            console.log('分享取消或失敗', err);
-                        }
-                    } else {
-                        // 3. 電腦版 Chrome 不支援直接傳檔，改用下載 + Line 文字連結
-                        const url = URL.createObjectURL(blob);
+                        await navigator.share({
+                            files: [file],
+                            title: fileName,
+                            text: '您的單據圖片'
+                        });
+                    } 
+                    // B. 電腦版：下載圖片
+                    else {
+                        const url = URL.createObjectURL(imgBlob);
                         const a = document.createElement('a');
                         a.style.display = 'none';
                         a.href = url;
@@ -694,23 +688,19 @@
                         a.click();
                         document.body.removeChild(a);
                         URL.revokeObjectURL(url);
-                        
-                        // 詢問使用者是否打開 Line 視窗
-                        const lineText = `您好，這是您的單據 ${fileName}，我已下載到電腦，稍後傳送給您。`;
-                        const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`;
-                        
-                        if(confirm(`💻 電腦版提示：\n\nPDF 檔案已下載到您的電腦。\n由於電腦版限制，無法自動傳送檔案。\n\n是否開啟 LINE 視窗？(開啟後請將剛下載的檔案拖曳進去)`)) {
+
+                        const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent("單據圖片已下載，請拖曳圖片至此傳送。")}`;
+                        if(confirm(`圖片已下載！\n是否開啟 LINE 視窗手動傳送？`)) {
                              window.open(lineUrl, '_blank');
                         }
                     }
                 } catch (err) {
                     console.error(err);
-                    element.style.transform = originalTransform;
-                    element.style.margin = originalMargin;
                     this.isLoading = false;
-                    alert('生成失敗，請重試');
+                    alert('圖片生成失敗');
                 }
             },
+            // ------------------------------------
 
             printWindow() {
                 const clientSuffix = this.buyer.name ? `_${this.buyer.name}` : '';
