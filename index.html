@@ -10,16 +10,17 @@
         style-src 'self' 'unsafe-inline'; 
         img-src 'self' data: blob:; 
         font-src 'self' data:; 
-        connect-src 'self' blob:;">
+        connect-src 'self';">
     
-    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (JPG Mode)</title>
+    <title>谷芳茶業有限公司 - 智慧單據系統 Pro (Label Fix)</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        /* --- 1. 全域設定與變數 --- */
+        /* --- 1. 全域設定 --- */
         :root {
             --primary-accent: #EBCB8B;
             --secondary-accent: #D08770;
@@ -62,7 +63,7 @@
         .title-group { text-align: center; width: 100%; }
         .sync-text { font-size: 0.8rem; color: #888; display: block; margin-top: 2px; }
         
-        /* 導覽列 & 按鈕 */
+        /* 導覽列 */
         .nav-row { display: flex; gap: 10px; width: 100%; max-width: 600px; justify-content: center; flex-wrap: wrap; }
         .tabs { display: flex; background: rgba(255,255,255,0.5); padding: 4px; border-radius: 50px; flex: 1 1 200px; border: 1px solid rgba(255,255,255,0.6); }
         .tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; border-radius: 40px; font-weight: bold; color: #888; transition: 0.3s; font-size: 1rem; }
@@ -143,7 +144,7 @@
         .btn:active { transform: scale(0.98); }
         .btn-primary { background: var(--secondary-accent); }
         .btn-success { background: #689F38; }
-        .btn-share { background: #06C755; } /* LINE Green */
+        .btn-share { background: linear-gradient(90deg, #40C4FF 0%, #06C755 100%); }
         .btn-secondary { background: var(--primary-accent); color: #5D4037; }
         .btn-danger { background: #FFEBEE; color: #D32F2F; border: 1px solid #FFCDCD; }
         .btn-sm { padding: 6px 12px; font-size: 0.85rem; border-radius: 15px; border: 1px solid #CCC; background: #FFF; cursor: pointer; }
@@ -164,7 +165,7 @@
             font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
         }
 
-        /* 列印內容樣式 */
+        /* Print Layout */
         .doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 30px; }
         .doc-title { font-size: 24pt; font-weight: bold; color: #000; }
         .doc-meta { text-align: right; font-size: 10pt; line-height: 1.5; }
@@ -173,7 +174,8 @@
         .party-box { width: 48%; }
         .party-label { font-weight: bold; background: #F5F5F5; padding: 4px 8px; margin-bottom: 8px; border-radius: 4px; display:inline-block;}
         .info-row { display: flex; margin-bottom: 5px; line-height: 1.4; }
-        .info-label { width: 65px; color: #444; flex-shrink: 0; font-weight: 600;}
+        /* 修正：增加寬度以容納「統一編號」與「聯絡電話」 */
+        .info-label { width: 80px; color: #444; flex-shrink: 0; font-weight: 600;}
         
         .doc-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 20px; }
         .doc-table th { border-bottom: 1px solid #000; padding: 8px 5px; text-align: left; background: #FAFAFA; font-weight: bold; }
@@ -186,7 +188,6 @@
         .total-row { display: flex; justify-content: space-between; padding: 5px 0; }
         .total-row.final { border-top: 2px solid #000; font-weight: bold; font-size: 13pt; margin-top: 8px; padding-top: 8px; }
         
-        /* 簽署區塊 */
         .signature-section { margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid; position: relative; gap: 20px; }
         .sign-box { 
             flex: 1; border: 2px solid #333; border-radius: 4px; padding: 10px; 
@@ -300,6 +301,10 @@
                             <button class="btn-sm" @click="addItemToCat(catIdx)">+</button>
                         </div>
                     </div>
+                    <div style="display:flex; gap:10px; margin-top:15px; padding-top:10px; border-top:1px dashed #ccc;">
+                        <input v-model="newCategoryName" placeholder="新增分類 (例: 茶具區)" @keyup.enter="addCategory" style="flex:1;">
+                        <button class="btn-sm" style="background:#EBCB8B; color:white; border:none; width:auto; padding:0 15px;" @click="addCategory">新增分類</button>
+                    </div>
                 </div>
 
                 <div style="margin-bottom:20px;">
@@ -358,10 +363,10 @@
                 </div>
                 <div>
                     <label>買方 (客戶)</label>
-                    <div class="form-group"><input v-model="buyer.name" placeholder="客戶名稱"></div>
-                    <div class="form-group"><input v-model="buyer.taxId" placeholder="統編"></div>
+                    <div class="form-group"><input v-model="buyer.name" placeholder="公司名稱"></div>
+                    <div class="form-group"><input v-model="buyer.taxId" placeholder="統一編號"></div>
                     <div class="form-group"><input v-model="buyer.contact" placeholder="聯絡人"></div>
-                    <div class="form-group"><input v-model="buyer.phone" placeholder="電話"></div>
+                    <div class="form-group"><input v-model="buyer.phone" placeholder="聯絡電話"></div>
                 </div>
             </div>
             <div style="margin-top:15px; border-top:1px dashed #ccc; padding-top:10px;">
@@ -451,8 +456,9 @@
             <textarea v-model="notes" rows="3"></textarea>
             <div class="btn-group">
                 <button class="btn btn-danger" @click="clearData">🗑️ 清空</button>
-                <button class="btn btn-share" @click="sharePdf">🚀 傳送 LINE (圖片)</button>
-                <button class="btn btn-primary" @click="printWindow">🖨️ 列印 / 存檔</button>
+                <button class="btn btn-share" @click="sharePdf">📤 分享 (Line/Mail)</button>
+                <button class="btn btn-share" @click="downloadImage">🖼️ 下載 JPG</button>
+                <button class="btn btn-primary" @click="printWindow">🖨️ 列印/存檔</button>
                 <button class="btn btn-success" @click="exportExcel">📊 匯出 Excel</button>
             </div>
         </div>
@@ -485,10 +491,10 @@
                 </div>
                 <div class="party-box">
                     <div class="party-label">買方 (To)</div>
-                    <div class="info-row"><span class="info-label">公司：</span><span>{{ buyer.name }}</span></div>
-                    <div class="info-row"><span class="info-label">統編：</span><span>{{ buyer.taxId }}</span></div>
-                    <div class="info-row"><span class="info-label">聯絡：</span><span>{{ buyer.contact }}</span></div>
-                    <div class="info-row"><span class="info-label">電話：</span><span>{{ buyer.phone }}</span></div>
+                    <div class="info-row"><span class="info-label">公司名稱：</span><span>{{ buyer.name }}</span></div>
+                    <div class="info-row"><span class="info-label">統一編號：</span><span>{{ buyer.taxId }}</span></div>
+                    <div class="info-row"><span class="info-label">聯絡人：</span><span>{{ buyer.contact }}</span></div>
+                    <div class="info-row"><span class="info-label">聯絡電話：</span><span>{{ buyer.phone }}</span></div>
                 </div>
             </div>
 
@@ -630,56 +636,52 @@
             },
             updateTitle() { document.title = `${this.docNumber}_${this.buyer.name || ''}`; },
             
-            // --- 使用您提供的代碼更新 sharePdf 函式 ---
-            async sharePdf() { 
+            async sharePdf() {
                 this.isLoading = true;
-                this.loadingText = '正在生成圖片，準備喚起 Line...';
+                this.loadingText = '正在排版並生成高清 PDF...';
 
                 const element = document.getElementById('print-area');
-                
-                // 1. 暫時調整樣式以利截圖
                 const originalTransform = element.style.transform;
                 const originalMargin = element.style.margin;
+
                 element.style.transform = 'scale(1)';
                 element.style.margin = '0 auto';
-                await this.$nextTick();
+                
+                await this.$nextTick(); 
 
-                // 2. 設定檔名
                 const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
-                const fileName = `${this.docNumber}${clientName}.jpg`; // 副檔名改為 jpg
+                const fileName = `${this.docNumber}${clientName}.pdf`;
 
-                // 3. 使用 html2pdf 的 img 功能
                 const opt = {
                     margin: 0,
                     filename: fileName,
-                    image: { type: 'jpeg', quality: 0.98 }, // 設定 JPG 品質
-                    html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { 
+                        scale: 2, 
+                        useCORS: true, 
+                        scrollY: 0,
+                        windowWidth: 794, 
+                        windowHeight: 1123 
+                    },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
                 try {
-                    // 利用 html2pdf.worker 取得圖片 blob
-                    const worker = html2pdf().set(opt).from(element);
-                    const imgBlob = await worker.outputImg('blob'); // 輸出圖片 blob
-                    
-                    // 復原畫面
+                    const blob = await html2pdf().set(opt).from(element).output('blob');
+                    const file = new File([blob], fileName, { type: 'application/pdf' });
+
                     element.style.transform = originalTransform;
                     element.style.margin = originalMargin;
                     this.isLoading = false;
 
-                    const file = new File([imgBlob], fileName, { type: 'image/jpeg' });
-
-                    // A. 手機版：呼叫原生分享
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
                             files: [file],
                             title: fileName,
-                            text: '您的單據圖片'
+                            text: '您的單據如附件。'
                         });
-                    } 
-                    // B. 電腦版：下載圖片
-                    else {
-                        const url = URL.createObjectURL(imgBlob);
+                    } else {
+                        const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.style.display = 'none';
                         a.href = url;
@@ -688,19 +690,71 @@
                         a.click();
                         document.body.removeChild(a);
                         URL.revokeObjectURL(url);
-
-                        const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent("單據圖片已下載，請拖曳圖片至此傳送。")}`;
-                        if(confirm(`圖片已下載！\n是否開啟 LINE 視窗手動傳送？`)) {
-                             window.open(lineUrl, '_blank');
-                        }
+                        alert('💻 電腦版提示：\n\nPDF 已自動下載。\n請手動打開 Line 或 Email，將下載的檔案「拖曳」進去發送。');
                     }
                 } catch (err) {
                     console.error(err);
+                    element.style.transform = originalTransform;
+                    element.style.margin = originalMargin;
                     this.isLoading = false;
-                    alert('圖片生成失敗');
+                    alert('生成失敗，請重試');
                 }
             },
-            // ------------------------------------
+
+            // 下載 JPG (功能同 sharePdf，但產出圖片)
+            async downloadImage() {
+                if (typeof html2canvas === 'undefined') {
+                    alert('無法載入圖片模組。');
+                    return;
+                }
+                this.isLoading = true;
+                this.loadingText = '正在生成 JPG...';
+
+                const element = document.getElementById('print-area');
+                const originalTransform = element.style.transform;
+                const originalMargin = element.style.margin;
+
+                element.style.transform = 'scale(1)';
+                element.style.margin = '0 auto';
+
+                await this.$nextTick();
+
+                try {
+                    const canvas = await html2canvas(element, {
+                        scale: 2,
+                        useCORS: true,
+                        scrollY: 0
+                    });
+
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                    
+                    const clientName = this.buyer.name ? `_${this.buyer.name}` : '';
+                    const fileName = `${this.docNumber}${clientName}.jpg`;
+                    
+                    // 下載
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    // 恢復樣式
+                    element.style.transform = originalTransform;
+                    element.style.margin = originalMargin;
+                    this.isLoading = false;
+
+                } catch (err) {
+                    console.error(err);
+                    element.style.transform = originalTransform;
+                    element.style.margin = originalMargin;
+                    this.isLoading = false;
+                    alert('生成圖片失敗');
+                }
+            },
 
             printWindow() {
                 const clientSuffix = this.buyer.name ? `_${this.buyer.name}` : '';
@@ -711,7 +765,7 @@
             openSettings() { this.showSettings = true; },
             addCategory() { if (this.newCategoryName.trim()) { this.categoryData.push({ name: this.newCategoryName.trim(), items: [], newItemInput: '' }); this.newCategoryName = ''; } },
             removeCategory(idx) { if (confirm('刪除此分類？')) this.categoryData.splice(idx, 1); },
-            addItemToCat(catIdx) { const cat = this.categoryData[catIdx]; if (cat.newItemInput.trim()) { cat.items.push(cat.newItemInput.trim()); cat.newItemInput = ''; } },
+            addItemToCat(catIdx) { const cat = this.categoryData[catIdx]; if (cat.newItemInput.trim()) { cat.items.push(cat.newItemInput.trim()); cat.items.push(cat.newItemInput.trim()); cat.newItemInput = ''; } },
             removeItemFromCat(catIdx, itemIdx) { this.categoryData[catIdx].items.splice(itemIdx, 1); },
             addUnit() { if(this.newUnitInput && !this.savedUnits.includes(this.newUnitInput)) { this.savedUnits.push(this.newUnitInput); this.newUnitInput = ''; } },
             removeUnit(index) { this.savedUnits.splice(index, 1); },
@@ -846,10 +900,10 @@
                 let ws_data = [
                     [this.seller.name], [this.docTitle], ["單號:", this.docNumber, "", "日期:", this.date], [],
                     ["【賣方資料】", "", "", "【買方資料】", ""],
-                    [sellerTitle, this.seller.name, "", "公司:", this.buyer.name],
-                    ["電話:", this.seller.phone, "", "統編:", this.buyer.taxId],
+                    [sellerTitle, this.seller.name, "", "公司名稱:", this.buyer.name],
+                    ["電話:", this.seller.phone, "", "統一編號:", this.buyer.taxId],
                     ["地址:", this.seller.address, "", "聯絡人:", this.buyer.contact],
-                    ["", "", "", "電話:", this.buyer.phone], [],
+                    ["", "", "", "聯絡電話:", this.buyer.phone], [],
                     ["品名", "價格", qtyHeader, "單位", "金額"]
                 ];
                 this.items.filter(i => i.name).forEach(i => { ws_data.push([i.name, i.price, i.quantity, i.unit || '-', this.calculateRowTotal(i)]); });
